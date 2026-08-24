@@ -1,0 +1,224 @@
+#!/usr/bin/env node
+/**
+ * Gera o index.html (site publicado) a partir do app.html (fonte).
+ *
+ *   node build.js                → usa a senha de senha.txt
+ *   node build.js "novaSenha"    → usa a senha informada e a grava em senha.txt
+ *
+ * O app inteiro é CIFRADO com a senha (AES-256-GCM, chave derivada por PBKDF2).
+ * O index.html publicado contém apenas a tela de senha e um bloco cifrado —
+ * quem abrir o código-fonte não lê comissões, taxas nem roteiro. O conteúdo só
+ * é decifrado no navegador, depois que alguém digita a senha certa.
+ *
+ * Por isso o app.html NÃO vai para o repositório (está no .gitignore).
+ */
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+
+const dir = __dirname;
+const senhaFile = path.join(dir, "senha.txt");
+const arg = process.argv[2];
+
+let senha = null;
+if (arg) {
+  senha = arg;
+  fs.writeFileSync(senhaFile, arg + "\n", "utf8");
+} else if (fs.existsSync(senhaFile)) {
+  senha = fs.readFileSync(senhaFile, "utf8").trim();
+}
+if (!senha) {
+  console.error('Nenhuma senha definida. Rode: node build.js "suaSenha"');
+  process.exit(1);
+}
+
+const ITER = 250000;
+const fonte = fs.readFileSync(path.join(dir, "app.html"), "utf8");
+
+const salt = crypto.randomBytes(16);
+const iv = crypto.randomBytes(12);
+const key = crypto.pbkdf2Sync(Buffer.from(senha, "utf8"), salt, ITER, 32, "sha256");
+const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+const cifrado = Buffer.concat([cipher.update(fonte, "utf8"), cipher.final()]);
+const tag = cipher.getAuthTag();
+// formato do payload: [ciphertext || authTag] em base64, com salt e iv separados
+const payload = Buffer.concat([cifrado, tag]).toString("base64");
+
+const doc = `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Bússola Grupo É</title>
+<meta name="theme-color" content="#1B6E75">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231B6E75'/%3E%3Ccircle cx='50' cy='50' r='31' fill='none' stroke='%23ffffff' stroke-opacity='.45' stroke-width='5'/%3E%3Cpath d='M67 33 45 45l-12 22 22-12z' fill='%23ffffff'/%3E%3Cpath d='M67 33 55 55 45 45z' fill='%23E1B563'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --paper:#F2F5F1; --card:#FFFFFF; --sunken:#E9EDE8;
+    --ink:#172420; --ink-soft:#4E5D57; --ink-faint:#7C8B84;
+    --border:#DBE2DA; --accent:#1B6E75; --accent-strong:#124F54; --danger:#B84237;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#101817; --card:#16201F; --sunken:#0C1312;
+      --ink:#E8EFEB; --ink-soft:#A8BBB2; --ink-faint:#748A81;
+      --border:#263330; --accent:#5CC0B7; --accent-strong:#8AD9D0; --danger:#E2837A;
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:'Source Sans 3',"Segoe UI",sans-serif; font-size:15px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  #gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .gate-card{
+    width:100%;max-width:380px;background:var(--card);
+    border:1px solid var(--border);border-radius:22px;padding:32px 30px;
+    box-shadow:0 8px 24px rgba(23,36,32,.08);
+  }
+  .gate-mark{
+    width:48px;height:48px;border-radius:14px;margin-bottom:18px;
+    background:linear-gradient(155deg,var(--accent),var(--accent-strong));
+    display:flex;align-items:center;justify-content:center;color:#fff;
+  }
+  .gate-card h1{
+    font-family:'Archivo',"Arial Narrow",sans-serif;font-weight:700;
+    font-size:21px;margin:0 0 6px;color:var(--ink);
+  }
+  .gate-card p{color:var(--ink-soft);font-size:14px;margin:0 0 18px;}
+  .gate-card label{display:block;font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+  .gate-card input{
+    width:100%;font-family:inherit;font-size:15px;color:var(--ink);
+    background:var(--sunken);border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+  }
+  .gate-card input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .gate-card button{
+    width:100%;margin-top:14px;font-family:inherit;font-size:14px;font-weight:600;
+    background:var(--accent);color:#fff;border:none;border-radius:999px;padding:11px 16px;cursor:pointer;
+  }
+  .gate-card button:hover{background:var(--accent-strong);}
+  .gate-card button[disabled]{opacity:.6;cursor:progress;}
+  #gateMsg{font-size:13px;font-weight:600;color:var(--danger);margin:12px 0 0;min-height:1em;}
+  #gateMsg.info{color:var(--ink-faint);font-weight:400;}
+</style>
+</head>
+<body>
+<div id="gate">
+  <form class="gate-card" id="gateForm" autocomplete="off">
+    <div class="gate-mark">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l7 2.8v5.4c0 4.3-2.9 8.2-7 9.5-4.1-1.3-7-5.2-7-9.5V5.8z"/><path d="M9.2 12l2 2 3.6-3.8"/>
+      </svg>
+    </div>
+    <h1>Bússola Grupo É</h1>
+    <p>Ferramenta interna da equipe de expansão. Informe a senha para continuar.</p>
+    <label for="gateInput">Senha da equipe</label>
+    <input type="password" id="gateInput" autocomplete="current-password" autofocus>
+    <button type="submit" id="gateBtn">Entrar</button>
+    <p id="gateMsg"></p>
+  </form>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var SALT = "${salt.toString("base64")}";
+  var IV   = "${iv.toString("base64")}";
+  var ITER = ${ITER};
+  var DADOS = "${payload}";
+  var CHAVE_LOCAL = "bussola_chave_v1";
+
+  function b64(s){
+    var bin = atob(s), a = new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) a[i] = bin.charCodeAt(i);
+    return a;
+  }
+
+  function abrir(senha){
+    if(!(window.crypto && window.crypto.subtle)){
+      return Promise.reject(new Error("navegador-sem-suporte"));
+    }
+    return crypto.subtle.importKey("raw", new TextEncoder().encode(senha), "PBKDF2", false, ["deriveKey"])
+      .then(function(base){
+        return crypto.subtle.deriveKey(
+          {name:"PBKDF2", salt:b64(SALT), iterations:ITER, hash:"SHA-256"},
+          base, {name:"AES-GCM", length:256}, false, ["decrypt"]);
+      })
+      .then(function(chave){
+        return crypto.subtle.decrypt({name:"AES-GCM", iv:b64(IV)}, chave, b64(DADOS));
+      })
+      .then(function(buf){
+        return new TextDecoder().decode(buf);
+      });
+  }
+
+  function montar(html){
+    document.getElementById("gate").remove();
+    var alvo = document.createElement("div");
+    alvo.id = "conteudo";
+    document.body.appendChild(alvo);
+    alvo.innerHTML = html;
+    // innerHTML não executa <script>: recria cada um para rodar de verdade.
+    // Só os que vieram do conteúdo — nunca este próprio loader.
+    var scripts = alvo.querySelectorAll("script");
+    for(var i=0;i<scripts.length;i++){
+      var novo = document.createElement("script");
+      novo.textContent = scripts[i].textContent;
+      scripts[i].parentNode.replaceChild(novo, scripts[i]);
+    }
+  }
+
+  var form = document.getElementById("gateForm");
+  var input = document.getElementById("gateInput");
+  var btn = document.getElementById("gateBtn");
+  var msg = document.getElementById("gateMsg");
+
+  function tentar(senha, silencioso){
+    btn.disabled = true;
+    if(!silencioso){ msg.className = "info"; msg.textContent = "Abrindo…"; }
+    return abrir(senha).then(function(html){
+      try{ sessionStorage.setItem(CHAVE_LOCAL, senha); }catch(e){}
+      montar(html);
+    }).catch(function(err){
+      btn.disabled = false;
+      try{ sessionStorage.removeItem(CHAVE_LOCAL); }catch(e){}
+      if(err && err.message === "navegador-sem-suporte"){
+        msg.className = "";
+        msg.textContent = "Este navegador não abre a ferramenta. Use Chrome, Edge, Firefox ou Safari atualizados.";
+        return;
+      }
+      if(silencioso){ msg.className=""; msg.textContent=""; return; }
+      msg.className = "";
+      msg.textContent = "Senha incorreta. Confira com seu gestor de expansão.";
+      input.value = "";
+      input.focus();
+    });
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    if(!input.value) return;
+    tentar(input.value, false);
+  });
+
+  // dentro da mesma aba, não pede a senha de novo a cada recarregamento
+  var guardada = null;
+  try{ guardada = sessionStorage.getItem(CHAVE_LOCAL); }catch(e){}
+  if(guardada){ tentar(guardada, true); }
+})();
+</script>
+</body>
+</html>
+`;
+
+fs.writeFileSync(path.join(dir, "index.html"), doc, "utf8");
+console.log(
+  `index.html gerado — ${(Buffer.byteLength(doc, "utf8") / 1024).toFixed(1)} KB, ` +
+    `conteúdo cifrado com AES-256-GCM (PBKDF2 ${ITER.toLocaleString("pt-BR")} iterações).`
+);
