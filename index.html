@@ -373,6 +373,42 @@
   .tbl-click tbody tr:hover .seta{color:var(--accent);}
   .prod-ico{display:inline-flex;color:var(--accent);margin-right:7px;vertical-align:-.18em;}
 
+  /* ============ Raio-X da cidade ============ */
+  .geo-busca{position:relative;max-width:520px;}
+  .geo-sug{
+    position:absolute;left:0;right:0;top:100%;margin-top:6px;z-index:20;
+    background:var(--paper-raised);border:1px solid var(--border);
+    border-radius:var(--radius-md);box-shadow:var(--shadow-lg);overflow:hidden;
+  }
+  .geo-sug-item{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;
+    border:none;background:transparent;padding:11px 15px;cursor:pointer;
+    font-family:inherit;font-size:14px;color:var(--ink);text-align:left;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .geo-sug-item:last-child{border-bottom:none;}
+  .geo-sug-item:hover{background:var(--paper-sunken);}
+
+  .sinal{
+    background:var(--card-bg);border:1px solid var(--border-soft);border-radius:var(--radius-lg);
+    padding:17px 19px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    border-left:3px solid var(--ink-faint);
+  }
+  .sinal-alta{border-left-color:var(--success);}
+  .sinal-média{border-left-color:var(--accent);}
+  .sinal-tit{font-family:var(--font-display);font-weight:800;font-size:15.5px;letter-spacing:-.02em;min-width:0;}
+  .sinal-ev{color:var(--ink-soft);font-size:13.2px;margin:6px 0 0;}
+
+  .prod-aderencia{
+    display:flex;align-items:center;gap:13px;width:100%;text-align:left;cursor:pointer;
+    background:var(--card-bg);border:1px solid var(--border-soft);border-radius:var(--radius-md);
+    padding:13px 16px;font-family:inherit;color:var(--ink);transition:border-color .14s,transform .1s;
+  }
+  .prod-aderencia:hover{border-color:var(--accent);transform:translateX(2px);}
+  .pa-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .pa-nome{font-weight:700;font-size:14.5px;}
+  .pa-por{font-size:12.5px;color:var(--ink-faint);}
+
   /* ============ Mapa da rede ============ */
   .mapa-caixa{
     background:var(--card-bg);border:1px solid var(--border-soft);border-radius:var(--radius-lg);
@@ -719,12 +755,17 @@
     .grid-2,.grid-3,.form-grid,.calc-out{grid-template-columns:1fr;}
     .grid-stats{grid-template-columns:1fr 1fr;gap:11px;}
     .kpi{padding:13px 14px;border-radius:var(--radius-md);}
-    .kpi-label{font-size:10px;letter-spacing:.04em;white-space:nowrap;}
+    /* rótulo nunca empurra o cartão: numa tela de 390px "HAB. POR
+       FRANQUIA" numa linha só estourava a largura da página. */
+    .kpi-label{font-size:10px;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .kpi-num{font-size:22px;}
     .kpi-ico{width:36px;height:36px;border-radius:12px;}
     .stat{padding:13px 14px;}
     .stat-num{font-size:21px;}
     .pc-card{padding:15px 16px;border-radius:var(--radius-md);}
+    .geo-busca{max-width:none;}
+    .sinal{padding:14px 15px;border-radius:var(--radius-md);}
+    .prod-aderencia{padding:12px 13px;}
     .filtros{grid-template-columns:1fr;gap:10px;padding:14px 15px;}
     .fl-resumo{padding-bottom:0;}
     .mapa-caixa{padding:14px 12px 12px;border-radius:var(--radius-md);}
@@ -762,6 +803,10 @@
     .acesso-titulo{font-size:24px;}
   }
 
+  /* Abaixo disso o ícone do KPI é o que sobra: some ele antes de deixar
+     o rótulo cortado. 430px cobre os celulares de 390 e 414. */
+  @media (max-width:430px){ .kpi-ico{display:none;} }
+
   @media (max-width:380px){
     .row{flex-wrap:wrap;}
     .topline > .row{width:100%;}
@@ -773,7 +818,6 @@
     .page-title{font-size:21px;}
     .bnav-btn{font-size:9.5px;}
     .grid-stats{grid-template-columns:1fr 1fr;}
-    .kpi-ico{display:none;}
   }
 
   @media (prefers-reduced-motion: reduce){
@@ -826,6 +870,7 @@
       <button class="nav-btn" data-action="ir" data-view="ramos" data-ic="grade"><span>Ramos e segmentos</span></button>
       <button class="nav-btn" data-action="ir" data-view="parceiros" data-ic="banco"><span>Parceiros</span></button>
       <button class="nav-btn" data-action="ir" data-view="rede" data-ic="loja"><span>Mapa da rede</span></button>
+      <button class="nav-btn" data-action="ir" data-view="geo" data-ic="alvo"><span>Raio-X da cidade</span></button>
       <button class="nav-btn" data-action="ir" data-view="comissoes" data-ic="dinheiro"><span>Comissões</span></button>
       <button class="nav-btn" data-action="ir" data-view="calculadora" data-ic="calc"><span>Calculadora</span></button>
       <button class="nav-btn" data-action="ir" data-view="scripts" data-ic="balao"><span>Scripts e objeções</span></button>
@@ -862,6 +907,7 @@
       <button class="sheet-item" data-action="ir" data-view="franquias" data-ic="loja"><span>Franquias</span></button>
       <button class="sheet-item" data-action="ir" data-view="parceiros" data-ic="banco"><span>Parceiros</span></button>
       <button class="sheet-item" data-action="ir" data-view="rede" data-ic="loja"><span>Mapa da rede</span></button>
+      <button class="sheet-item" data-action="ir" data-view="geo" data-ic="alvo"><span>Raio-X da cidade</span></button>
       <button class="sheet-item" data-action="ir" data-view="calculadora" data-ic="calc"><span>Calculadora</span></button>
       <button class="sheet-item" data-action="ir" data-view="scripts" data-ic="balao"><span>Scripts e objeções</span></button>
       <button class="sheet-item" data-action="ir" data-view="equipe" data-ic="usuario" data-admin="1"><span>Equipe</span></button>
@@ -1110,6 +1156,18 @@ var PERGUNTAS_DIAGNOSTICO_BASE = [
   "Carrega do banco após o login"
 ];
 
+var INDICADORES_BASE = {campos: [], porMunicipio: {}};
+
+// Taxas para as estimativas. Ficam editáveis de propósito: são premissas,
+// não medições, e quem responde por elas é o administrador.
+var GEOCONFIG_BASE = {
+  taxaPet: 0.8,
+  fontePet: "estimativa de mercado — confirme antes de citar",
+  taxaIdoso: 0.15,
+  fonteIdoso: "média nacional — confirme antes de citar",
+  sedes: []
+};
+
 var FRANQUIAS_BASE = [
   {"id":"f1","nome":"Franqueado de exemplo","cep":"00000-000","uf":"PR","cidade":"Cidade de exemplo",
    "data":"01/01/2026","situacao":"Ativo","negocios":["Carrega do banco após o login"],"modalidade":"Home Office"}
@@ -1194,6 +1252,8 @@ var COLECOES = {
   sugestoes:     {base:function(){ return SUGESTOES_BASE; },      tipo:"lista"},
   parceiros:     {base:function(){ return PARCEIROS_BASE; },      tipo:"lista"},
   franquias:     {base:function(){ return FRANQUIAS_BASE; },      tipo:"lista"},
+  indicadores:   {base:function(){ return INDICADORES_BASE; },    tipo:"objeto"},
+  geoConfig:     {base:function(){ return GEOCONFIG_BASE; },      tipo:"objeto"},
   divergencia:   {base:function(){ return DIVERGENCIA_BASE; },    tipo:"objeto"}
 };
 
@@ -3402,6 +3462,7 @@ var ADM_ABAS = [
   {k:"ramos",     n:"Ramos",      ic:"grade"},
   {k:"parceiros", n:"Parceiros",  ic:"banco"},
   {k:"rede",      n:"Rede",       ic:"loja"},
+  {k:"geo",       n:"Indicadores",ic:"alvo"},
   {k:"comissoes", n:"Comissões",  ic:"dinheiro"},
   {k:"scripts",   n:"Scripts",    ic:"balao"},
   {k:"objecoes",  n:"Objeções",   ic:"escudo"}
@@ -3454,6 +3515,7 @@ function renderAdm(){
   else if(aba==="ramos")     h += admRamos();
   else if(aba==="parceiros") h += admParceiros();
   else if(aba==="rede")      h += admRede();
+  else if(aba==="geo")       h += admGeo();
   else if(aba==="comissoes") h += admComissoes();
   else if(aba==="scripts")   h += admScripts();
   else if(aba==="objecoes")  h += admObjecoes();
@@ -3895,7 +3957,7 @@ function aplicarTema(){
   document.querySelectorAll(".theme-btn").forEach(function(b){ b.classList.toggle("active", b.dataset.tema===ui.tema); });
 }
 var NOMES_VIEW = {inicio:"Início", atendimento:"Atendimento", grupo:"O Grupo É", franquias:"Franquias",
-  ramos:"Ramos e segmentos", parceiros:"Parceiros", rede:"Mapa da rede", comissoes:"Comissões", calculadora:"Calculadora",
+  ramos:"Ramos e segmentos", parceiros:"Parceiros", rede:"Mapa da rede", geo:"Raio-X da cidade", comissoes:"Comissões", calculadora:"Calculadora",
   scripts:"Scripts e objeções", equipe:"Equipe", adm:"Administração", config:"Configurações"};
 
 function render(){
@@ -3907,7 +3969,7 @@ function render(){
     if(nome){ b.title = nome; b.setAttribute("aria-label", nome); }
   });
   // barra inferior e painel "Mais" (celular)
-  var noSheet = ["grupo","franquias","parceiros","rede","calculadora","scripts","config"];
+  var noSheet = ["grupo","franquias","parceiros","rede","geo","calculadora","scripts","config"];
   document.querySelectorAll(".bnav-btn").forEach(function(b){
     if(b.dataset.ic && !b.querySelector(".ico-svg")) b.insertAdjacentHTML("afterbegin", ico(b.dataset.ic,20));
     b.classList.toggle("active", b.dataset.view? b.dataset.view===ui.view
@@ -3956,6 +4018,7 @@ function render(){
   else if(v==="ramos") renderRamos();
   else if(v==="parceiros") renderParceiros();
   else if(v==="rede") renderRede();
+  else if(v==="geo") renderGeo();
   else if(v==="comissoes") renderComissoes();
   else if(v==="calculadora") renderCalculadora();
   else if(v==="scripts") renderScripts();
@@ -4187,6 +4250,87 @@ function handle(action, el){
         .then(function(){ render(); toast("Números atualizados."); })
         .catch(function(err){ el.disabled = false; toast("Não consegui atualizar: "+((err&&err.message)||"erro")); });
       break;
+
+    /* geomarketing */
+    case "geo-cidade":
+      ui.geoCidade = el.dataset.c;
+      ui.geoTermo = "";
+      render();
+      // o IBGE é complemento: a tela já está montada quando ele chega
+      tentarIbge(el.dataset.c);
+      break;
+
+    case "copiar-geo":
+      tryCopy(resumoGeoTexto(el.dataset.c));
+      break;
+
+    case "editar-indicador": {
+      var ci = campoIndicador(el.dataset.id);
+      if(!ci) return;
+      abrirForm("Fonte do indicador", [
+        {id:"nome", rot:"Nome", largo:true},
+        {id:"fonte", rot:"Fonte", largo:true, ph:"ex.: Senatran"},
+        {id:"data", rot:"Data de referência", ph:"ex.: jan/2026"}
+      ], {nome:ci.nome, fonte:ci.fonte, data:ci.data}, "salvar-indicador", 'data-id="'+esc(ci.id)+'"');
+      break;
+    }
+    case "salvar-indicador": {
+      var baseI = clonar(INDICADORES());
+      (baseI.campos||[]).forEach(function(c){
+        if(c.id !== el.dataset.id) return;
+        c.nome = fmVal("nome") || c.nome;
+        c.fonte = fmVal("fonte");
+        c.data = fmVal("data");
+      });
+      db.set("indicadores", baseI); closeModal(); render(); toast("Fonte registrada.");
+      break;
+    }
+    case "excluir-indicador": {
+      var alvoI = campoIndicador(el.dataset.id);
+      if(!alvoI) return;
+      if(!window.confirm("Remover o indicador “"+alvoI.nome+"” de todos os municípios?")) return;
+      var b2 = clonar(INDICADORES());
+      b2.campos = (b2.campos||[]).filter(function(c){ return c.id !== alvoI.id; });
+      Object.keys(b2.porMunicipio||{}).forEach(function(k){ delete b2.porMunicipio[k][alvoI.id]; });
+      db.set("indicadores", b2); render(); toast("Indicador removido.");
+      break;
+    }
+    case "limpar-ibge":
+      _ibge = {};
+      try{ localStorage.removeItem(IBGE_CHAVE); }catch(e){}
+      ui.ibgeErro = null;
+      render(); toast("Cache da consulta limpo.");
+      break;
+    case "editar-geoconfig": {
+      var cfg = geoConfig();
+      abrirForm("Ajustes das estimativas", CAMPOS_GEOCONFIG, {
+        taxaPet: cfg.taxaPet, fontePet: cfg.fontePet,
+        taxaIdoso: Math.round((cfg.taxaIdoso||0)*100),
+        fonteIdoso: cfg.fonteIdoso,
+        sedes: (cfg.sedes||[]).map(function(c){
+          var mm = municipioPorCodigo(c); return mm? mm.nome+"/"+mm.uf : c;
+        }).join("\n")
+      }, "salvar-geoconfig");
+      break;
+    }
+    case "salvar-geoconfig": {
+      var novo = clonar(geoConfig());
+      var tp = lerNumero(fmVal("taxaPet")), ti = lerNumero(fmVal("taxaIdoso"));
+      novo.taxaPet = tp == null ? 0 : tp;
+      novo.taxaIdoso = ti == null ? 0 : ti/100;
+      novo.fontePet = fmVal("fontePet");
+      novo.fonteIdoso = fmVal("fonteIdoso");
+      var naoAchou = [];
+      novo.sedes = fmLista("sedes").map(function(linha){
+        var p = linha.split("/");
+        var mm = acharMunicipio(p[0], (p[1]||"").trim().toUpperCase());
+        if(!mm) naoAchou.push(linha);
+        return mm ? mm.cod : null;
+      }).filter(Boolean);
+      db.set("geoConfig", novo); closeModal(); render();
+      toast(naoAchou.length? "Salvo. Não encontrei: "+naoAchou.join(", ") : "Ajustes salvos.");
+      break;
+    }
 
     /* mapa da rede */
     case "mapa-uf": {
@@ -4860,6 +5004,13 @@ document.addEventListener("input", function(e){
     if(novo){ novo.focus(); try{ novo.setSelectionRange(caret,caret); }catch(err){} }
     return;
   }
+  var gb = e.target.closest('[data-action-input="geo-busca"]');
+  if(gb){
+    ui.geoTermo = gb.value;
+    ui.geoFoco = true;
+    render();
+    return;
+  }
   var ab = e.target.closest('[data-action-input="adm-rede-busca"]');
   if(ab){
     ui.admRedeBusca = ab.value;
@@ -4957,6 +5108,37 @@ function lerJson(input, aoLer){
 }
 
 document.addEventListener("change", function(e){
+  // importação de indicadores por município
+  var elInd = e.target.closest('[data-action-change="importar-indicadores"]');
+  if(elInd){
+    var arqI = elInd.files && elInd.files[0];
+    elInd.value = "";
+    if(!arqI) return;
+    toast("Lendo a planilha…");
+    lerLinhasPlanilha(arqI).then(function(linhas){
+      var r = importarIndicadores(linhas);
+      var nomes = r.campos.map(function(c){ return c.nome; }).join(", ");
+      if(!window.confirm(
+        "Encontrei "+r.campos.length+" indicador(es): "+nomes+"\n\n"+
+        r.casados+" municípios reconhecidos."+
+        (r.perdidos.length? "\n\nNão reconheci, entre outros: "+r.perdidos.slice(0,5).join(", ") : "")+
+        "\n\nImportar?"
+      )) return;
+      db.set("indicadores", r.base);
+      render();
+      toast(r.casados+" municípios atualizados.");
+    }).catch(function(err){
+      var m = String((err && err.message) || "");
+      if(m === "sem-municipio")  return toast("Não achei a coluna de município nem a de código do IBGE.");
+      if(m === "sem-numeros")    return toast("Nenhuma coluna numérica para importar.");
+      if(m === "nenhum-casou")   return toast("Nenhum município da planilha bateu com a base. Confira se há coluna de UF.");
+      if(m === "planilha-vazia") return toast("A planilha está vazia.");
+      if(m === "sem-xlsx")       return toast("Não consegui carregar o leitor de .xlsx. Salve como CSV e tente de novo.");
+      toast("Não consegui ler: "+(m || "erro"));
+    });
+    return;
+  }
+
   // importação da planilha da rede
   var elRede = e.target.closest('[data-action-change="importar-rede"]');
   if(elRede){
@@ -5538,19 +5720,876 @@ function carregarXlsx(){
   }).catch(function(){ throw new Error("sem-xlsx"); });
 }
 
-function lerPlanilha(arquivo){
+// Lê a planilha e devolve as linhas cruas. Quem chama decide o que fazer
+// com elas — a rede e os indicadores usam o mesmo leitor.
+function lerLinhasPlanilha(arquivo){
   var ext = (arquivo.name||"").toLowerCase().split(".").pop();
   if(ext === "csv" || /text\/csv|text\/plain/.test(arquivo.type||"")){
-    return arquivo.text().then(function(t){ return linhasParaFranquias(lerCsv(t)); });
+    return arquivo.text().then(lerCsv);
   }
   return carregarXlsx().then(function(XLSX){
     return arquivo.arrayBuffer().then(function(buf){
       var wb = XLSX.read(buf, {type:"array"});
       var ws = wb.Sheets[wb.SheetNames[0]];
-      var linhas = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:""});
-      return linhasParaFranquias(linhas);
+      return XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:""});
     });
   });
+}
+function lerPlanilha(arquivo){
+  return lerLinhasPlanilha(arquivo).then(linhasParaFranquias);
+}
+
+/* =========================================================================
+   GEOMARKETING
+
+   O vendedor digita a cidade do candidato e recebe: o que a própria rede
+   já prova naquela praça, o que os indicadores públicos dizem do lugar, e
+   quais produtos têm mais aderência ali — com a frase pronta para falar.
+
+   Três camadas, em ordem de confiança:
+
+   1. A REDE (offline, dado nosso). Quantas franquias existem ali, o mix de
+      negócios que funciona comparado à média nacional, a modalidade
+      predominante. É a evidência mais forte que existe, porque é
+      comportamento real e não estimativa.
+
+   2. INDICADORES (planilha importada pelo admin). Frota, população,
+      faixa etária — qualquer tabela por município. Cada número carrega
+      fonte e data, e some da tela quando não existe.
+
+   3. IBGE AO VIVO (do navegador). Complemento. Se não responder, a tela
+      continua útil com as duas camadas de cima.
+
+   Nada aqui promete resultado: são sinais para a conversa. As regras de
+   conformidade do Grupo É aparecem junto, de propósito.
+   ========================================================================= */
+
+var COD_UF = {"SE":"28","AP":"16","TO":"17","BA":"29","SP":"35","AM":"13","RR":"14","DF":"53","MS":"50","PB":"25","RN":"24","GO":"52","MG":"31","AL":"27","PE":"26","AC":"12","SC":"42","RO":"11","CE":"23","MT":"51","ES":"32","PR":"41","PI":"22","RJ":"33","RS":"43","PA":"15","MA":"21"};
+var MUNICIPIOS_RAW = {"SE":["00100Amparo De São Francisco","00209Aquidabã","00308Aracaju","00407Arauá","00506Areia Branca","00605Barra Dos Coqueiros","00670Boquim","00704Brejo Grande","01009Campo Do Brito","01108Canhoba","01207Canindé De São Francisco","01306Capela","01405Carira","01504Carmópolis","01603Cedro De São João","01702Cristinápolis","01900Cumbe","02007Divina Pastora","02106Estância","02205Feira Nova","02304Frei Paulo","02403Gararu","02502General Maynard","02601Gracho Cardoso","02700Ilha Das Flores","02809Indiaroba","02908Itabaiana","03005Itabaianinha","03104Itabi","03203Itaporanga D'Ajuda","03302Japaratuba","03401Japoatã","03500Lagarto","03609Laranjeiras","03708Macambira","03807Malhada Dos Bois","03906Malhador","04003Maruim","04102Moita Bonita","04201Monte Alegre De Sergipe","04300Muribeca","04409Neópolis","04458Nossa Senhora Aparecida","04508Nossa Senhora Da Glória","04607Nossa Senhora Das Dores","04706Nossa Senhora De Lourdes","04805Nossa Senhora Do Socorro","04904Pacatuba","05000Pedra Mole","05109Pedrinhas","05208Pinhão","05307Pirambu","05406Poço Redondo","05505Poço Verde","05604Porto Da Folha","05703Propriá","05802Riachão Do Dantas","05901Riachuelo","06008Ribeirópolis","06107Rosário Do Catete","06206Salgado","06305Santa Luzia Do Itanhy","06404Santana Do São Francisco","06503Santa Rosa De Lima","06602Santo Amaro Das Brotas","06701São Cristóvão","06800São Domingos","06909São Francisco","07006São Miguel Do Aleixo","07105Simão Dias","07204Siriri","07303Telha","07402Tobias Barreto","07501Tomar Do Geru","07600Umbaúba"],"AP":["00055Serra Do Navio","00105Amapá","00154Pedra Branca Do Amapari","00204Calçoene","00212Cutias","00238Ferreira Gomes","00253Itaubal","00279Laranjal Do Jari","00303Macapá","00402Mazagão","00501Oiapoque","00535Porto Grande","00550Pracuúba","00600Santana","00709Tartarugalzinho","00808Vitória Do Jari"],"TO":["00251Abreulândia","00301Aguiarnópolis","00350Aliança Do Tocantins","00400Almas","00707Alvorada","01002Ananás","01051Angico","01101Aparecida Do Rio Negro","01309Aragominas","01903Araguacema","02000Araguaçu","02109Araguaína","02158Araguanã","02208Araguatins","02307Arapoema","02406Arraias","02554Augustinópolis","02703Aurora Do Tocantins","02901Axixá Do Tocantins","03008Babaçulândia","03057Bandeirantes Do Tocantins","03073Barra Do Ouro","03107Barrolândia","03206Bernardo Sayão","03305Bom Jesus Do Tocantins","03602Brasilândia Do Tocantins","03701Brejinho De Nazaré","03800Buriti Do Tocantins","03826Cachoeirinha","03842Campos Lindos","03867Cariri Do Tocantins","03883Carmolândia","03891Carrasco Bonito","03909Caseara","04105Centenário","04600Chapada De Areia","05102Chapada Da Natividade","05508Colinas Do Tocantins","05557Combinado","05607Conceição Do Tocantins","06001Couto Magalhães","06100Cristalândia","06258Crixás Do Tocantins","06506Darcinópolis","07009Dianópolis","07108Divinópolis Do Tocantins","07207Dois Irmãos Do Tocantins","07306Dueré","07405Esperantina","07553Fátima","07652Figueirópolis","07702Filadélfia","08205Formoso Do Araguaia","08254Fortaleza Do Tabocão","08304Goianorte","09005Goiatins","09302Guaraí","09500Gurupi","09807Ipueiras","10508Itacajá","10706Itaguatins","10904Itapiratins","11100Itaporã Do Tocantins","11506Jaú Do Tocantins","11803Juarina","11902Lagoa Da Confusão","11951Lagoa Do Tocantins","12009Lajeado","12157Lavandeira","12405Lizarda","12454Luzinópolis","12504Marianópolis Do Tocantins","12702Mateiros","12801Maurilândia Do Tocantins","13205Miracema Do Tocantins","13304Miranorte","13601Monte Do Carmo","13700Monte Santo Do Tocantins","13809Palmeiras Do Tocantins","13957Muricilândia","14203Natividade","14302Nazaré","14880Nova Olinda","15002Nova Rosalândia","15101Novo Acordo","15150Novo Alegre","15259Novo Jardim","15507Oliveira De Fátima","15705Palmeirante","15754Palmeirópolis","16109Paraíso Do Tocantins","16208Paranã","16307Pau D'Arco","16505Pedro Afonso","16604Peixe","16653Pequizeiro","16703Colméia","17008Pindorama Do Tocantins","17206Piraquê","17503Pium","17800Ponte Alta Do Bom Jesus","17909Ponte Alta Do Tocantins","18006Porto Alegre Do Tocantins","18204Porto Nacional","18303Praia Norte","18402Presidente Kennedy","18451Pugmil","18501Recursolândia","18550Riachinho","18659Rio Da Conceição","18709Rio Dos Bois","18758Rio Sono","18808Sampaio","18840Sandolândia","18865Santa Fé Do Araguaia","18881Santa Maria Do Tocantins","18899Santa Rita Do Tocantins","18907Santa Rosa Do Tocantins","19004Santa Tereza Do Tocantins","20002Santa Terezinha Do Tocantins","20101São Bento Do Tocantins","20150São Félix Do Tocantins","20200São Miguel Do Tocantins","20259São Salvador Do Tocantins","20309São Sebastião Do Tocantins","20499São Valério","20655Silvanópolis","20804Sítio Novo Do Tocantins","20853Sucupira","20903Taguatinga","20937Taipas Do Tocantins","20978Talismã","21000Palmas","21109Tocantínia","21208Tocantinópolis","21257Tupirama","21307Tupiratins","22081Wanderlândia","22107Xambioá"],"BA":["00108Abaíra","00207Abaré","00306Acajutiba","00355Adustina","00405Água Fria","00504Érico Cardoso","00603Aiquara","00702Alagoinhas","00801Alcobaça","00900Almadina","01007Amargosa","01106Amélia Rodrigues","01155América Dourada","01205Anagé","01304Andaraí","01353Andorinha","01403Angical","01502Anguera","01601Antas","01700Antônio Cardoso","01809Antônio Gonçalves","01908Aporá","01957Apuarema","02005Aracatu","02054Araças","02104Araci","02203Aramari","02252Arataca","02302Aratuípe","02401Aurelino Leal","02500Baianópolis","02609Baixa Grande","02658Banzaê","02708Barra","02807Barra Da Estiva","02906Barra Do Choça","03003Barra Do Mendes","03102Barra Do Rocha","03201Barreiras","03235Barro Alto","03276Barrocas","03300Barro Preto","03409Belmonte","03508Belo Campo","03607Biritinga","03706Boa Nova","03805Boa Vista Do Tupim","03904Bom Jesus Da Lapa","03953Bom Jesus Da Serra","04001Boninal","04050Bonito","04100Boquira","04209Botuporã","04308Brejões","04407Brejolândia","04506Brotas De Macaúbas","04605Brumado","04704Buerarema","04753Buritirama","04803Caatiba","04852Cabaceiras Do Paraguaçu","04902Cachoeira","05008Caculé","05107Caém","05156Caetanos","05206Caetité","05305Cafarnaum","05404Cairu","05503Caldeirão Grande","05602Camacan","05701Camaçari","05800Camamu","05909Campo Alegre De Lourdes","06006Campo Formoso","06105Canápolis","06204Canarana","06303Canavieiras","06402Candeal","06501Candeias","06600Candiba","06709Cândido Sales","06808Cansanção","06824Canudos","06857Capela Do Alto Alegre","06873Capim Grosso","06899Caraíbas","06907Caravelas","07004Cardeal Da Silva","07103Carinhanha","07202Casa Nova","07301Castro Alves","07400Catolândia","07509Catu","07558Caturama","07608Central","07707Chorrochó","07806Cícero Dantas","07905Cipó","08002Coaraci","08101Cocos","08200Conceição Da Feira","08309Conceição Do Almeida","08408Conceição Do Coité","08507Conceição Do Jacuípe","08606Conde","08705Condeúba","08804Contendas Do Sincorá","08903Coração De Maria","09000Cordeiros","09109Coribe","09208Coronel João Sá","09307Correntina","09406Cotegipe","09505Cravolândia","09604Crisópolis","09703Cristópolis","09802Cruz Das Almas","09901Curaçá","10008Dário Meira","10057Dias D'Ávila","10107Dom Basílio","10206Dom Macedo Costa","10305Elísio Medrado","10404Encruzilhada","10503Entre Rios","10602Esplanada","10701Euclides Da Cunha","10727Eunápolis","10750Fátima","10776Feira Da Mata","10800Feira De Santana","10859Filadélfia","10909Firmino Alves","11006Floresta Azul","11105Formosa Do Rio Preto","11204Gandu","11253Gavião","11303Gentio Do Ouro","11402Glória","11501Gongogi","11600Governador Mangabeira","11659Guajeru","11709Guanambi","11808Guaratinga","11857Heliópolis","11907Iaçu","12004Ibiassucê","12103Ibicaraí","12202Ibicoara","12301Ibicuí","12400Ibipeba","12509Ibipitanga","12608Ibiquera","12707Ibirapitanga","12806Ibirapuã","12905Ibirataia","13002Ibitiara","13101Ibititá","13200Ibotirama","13309Ichu","13408Igaporã","13457Igrapiúna","13507Iguaí","13606Ilhéus","13705Inhambupe","13804Ipecaetá","13903Ipiaú","14000Ipirá","14109Ipupiara","14208Irajuba","14307Iramaia","14406Iraquara","14505Irará","14604Irecê","14653Itabela","14703Itaberaba","14802Itabuna","14901Itacaré","15007Itaeté","15106Itagi","15205Itagibá","15304Itagimirim","15353Itaguaçu Da Bahia","15403Itaju Do Colônia","15502Itajuípe","15601Itamaraju","15700Itamari","15809Itambé","15908Itanagra","16005Itanhém","16104Itaparica","16203Itapé","16302Itapebi","16401Itapetinga","16500Itapicuru","16609Itapitanga","16708Itaquara","16807Itarantim","16856Itatim","16906Itiruçu","17003Itiúba","17102Itororó","17201Ituaçu","17300Ituberá","17334Iuiú","17359Jaborandi","17409Jacaraci","17508Jacobina","17607Jaguaquara","17706Jaguarari","17805Jaguaripe","17904Jandaíra","18001Jequié","18100Jeremoabo","18209Jiquiriçá","18308Jitaúna","18357João Dourado","18407Juazeiro","18456Jucuruçu","18506Jussara","18555Jussari","18605Jussiape","18704Lafaiete Coutinho","18753Lagoa Real","18803Laje","18902Lajedão","19009Lajedinho","19058Lajedo Do Tabocal","19108Lamarão","19157Lapão","19207Lauro De Freitas","19306Lençóis","19405Licínio De Almeida","19504Livramento De Nossa Senhora","19553Luís Eduardo Magalhães","19603Macajuba","19702Macarani","19801Macaúbas","19900Macururé","19926Madre De Deus","19959Maetinga","20007Maiquinique","20106Mairi","20205Malhada","20304Malhada De Pedras","20403Manoel Vitorino","20452Mansidão","20502Maracás","20601Maragogipe","20700Maraú","20809Marcionílio Souza","20908Mascote","21005Mata De São João","21054Matina","21104Medeiros Neto","21203Miguel Calmon","21302Milagres","21401Mirangaba","21450Mirante","21500Monte Santo","21609Morpará","21708Morro Do Chapéu","21807Mortugaba","21906Mucugê","22003Mucuri","22052Mulungu Do Morro","22102Mundo Novo","22201Muniz Ferreira","22250Muquém De São Francisco","22300Muritiba","22409Mutuípe","22508Nazaré","22607Nilo Peçanha","22656Nordestina","22706Nova Canaã","22730Nova Fátima","22755Nova Ibiá","22805Nova Itarana","22854Nova Redenção","22904Nova Soure","23001Nova Viçosa","23035Novo Horizonte","23050Novo Triunfo","23100Olindina","23209Oliveira Dos Brejinhos","23308Ouriçangas","23357Ourolândia","23407Palmas De Monte Alto","23506Palmeiras","23605Paramirim","23704Paratinga","23803Paripiranga","23902Pau Brasil","24009Paulo Afonso","24058Pé De Serra","24108Pedrão","24207Pedro Alexandre","24306Piatã","24405Pilão Arcado","24504Pindaí","24603Pindobaçu","24652Pintadas","24678Piraí Do Norte","24702Piripá","24801Piritiba","24900Planaltino","25006Planalto","25105Poções","25204Pojuca","25253Ponto Novo","25303Porto Seguro","25402Potiraguá","25501Prado","25600Presidente Dutra","25709Presidente Jânio Quadros","25758Presidente Tancredo Neves","25808Queimadas","25907Quijingue","25931Quixabeira","25956Rafael Jambeiro","26004Remanso","26103Retirolândia","26202Riachão Das Neves","26301Riachão Do Jacuípe","26400Riacho De Santana","26509Ribeira Do Amparo","26608Ribeira Do Pombal","26657Ribeirão Do Largo","26707Rio De Contas","26806Rio Do Antônio","26905Rio Do Pires","27002Rio Real","27101Rodelas","27200Ruy Barbosa","27309Salinas Da Margarida","27408Salvador","27507Santa Bárbara","27606Santa Brígida","27705Santa Cruz Cabrália","27804Santa Cruz Da Vitória","27903Santa Inês","28000Santaluz","28059Santa Luzia","28109Santa Maria Da Vitória","28208Santana","28307Santanópolis","28406Santa Rita De Cássia","28505Santa Teresinha","28604Santo Amaro","28703Santo Antônio De Jesus","28802Santo Estêvão","28901São Desidério","28950São Domingos","29008São Félix","29057São Félix Do Coribe","29107São Felipe","29206São Francisco Do Conde","29255São Gabriel","29305São Gonçalo Dos Campos","29354São José Da Vitória","29370São José Do Jacuípe","29404São Miguel Das Matas","29503São Sebastião Do Passé","29602Sapeaçu","29701Sátiro Dias","29750Saubara","29800Saúde","29909Seabra","30006Sebastião Laranjeiras","30105Senhor Do Bonfim","30154Serra Do Ramalho","30204Sento Sé","30303Serra Dourada","30402Serra Preta","30501Serrinha","30600Serrolândia","30709Simões Filho","30758Sítio Do Mato","30766Sítio Do Quinto","30774Sobradinho","30808Souto Soares","30907Tabocas Do Brejo Velho","31004Tanhaçu","31053Tanque Novo","31103Tanquinho","31202Taperoá","31301Tapiramutá","31350Teixeira De Freitas","31400Teodoro Sampaio","31509Teofilândia","31608Teolândia","31707Terra Nova","31806Tremedal","31905Tucano","32002Uauá","32101Ubaíra","32200Ubaitaba","32309Ubatã","32408Uibaí","32457Umburanas","32507Una","32606Urandi","32705Uruçuca","32804Utinga","32903Valença","33000Valente","33059Várzea Da Roça","33109Várzea Do Poço","33158Várzea Nova","33174Varzedo","33208Vera Cruz","33257Vereda","33307Vitória Da Conquista","33406Wagner","33455Wanderley","33505Wenceslau Guimarães","33604Xique-Xique"],"SP":["00105Adamantina","00204Adolfo","00303Aguaí","00402Águas Da Prata","00501Águas De Lindóia","00550Águas De Santa Bárbara","00600Águas De São Pedro","00709Agudos","00758Alambari","00808Alfredo Marcondes","00907Altair","01004Altinópolis","01103Alto Alegre","01152Alumínio","01202Álvares Florence","01301Álvares Machado","01400Álvaro De Carvalho","01509Alvinlândia","01608Americana","01707Américo Brasiliense","01806Américo De Campos","01905Amparo","02002Analândia","02101Andradina","02200Angatuba","02309Anhembi","02408Anhumas","02507Aparecida","02606Aparecida D'Oeste","02705Apiaí","02754Araçariguama","02804Araçatuba","02903Araçoiaba Da Serra","03000Aramina","03109Arandu","03158Arapeí","03208Araraquara","03307Araras","03356Arco-Íris","03406Arealva","03505Areias","03604Areiópolis","03703Ariranha","03802Artur Nogueira","03901Arujá","03950Aspásia","04008Assis","04107Atibaia","04206Auriflama","04305Avaí","04404Avanhandava","04503Avaré","04602Bady Bassitt","04701Balbinos","04800Bálsamo","04909Bananal","05005Barão De Antonina","05104Barbosa","05203Bariri","05302Barra Bonita","05351Barra Do Chapéu","05401Barra Do Turvo","05500Barretos","05609Barrinha","05708Barueri","05807Bastos","05906Batatais","06003Bauru","06102Bebedouro","06201Bento De Abreu","06300Bernardino De Campos","06359Bertioga","06409Bilac","06508Birigui","06607Biritiba-Mirim","06706Boa Esperança Do Sul","06805Bocaina","06904Bofete","07001Boituva","07100Bom Jesus Dos Perdões","07159Bom Sucesso De Itararé","07209Borá","07308Boracéia","07407Borborema","07456Borebi","07506Botucatu","07605Bragança Paulista","07704Braúna","07753Brejo Alegre","07803Brodowski","07902Brotas","08009Buri","08108Buritama","08207Buritizal","08306Cabrália Paulista","08405Cabreúva","08504Caçapava","08603Cachoeira Paulista","08702Caconde","08801Cafelândia","08900Caiabu","09007Caieiras","09106Caiuá","09205Cajamar","09254Cajati","09304Cajobi","09403Cajuru","09452Campina Do Monte Alegre","09502Campinas","09601Campo Limpo Paulista","09700Campos Do Jordão","09809Campos Novos Paulista","09908Cananéia","09957Canas","10005Cândido Mota","10104Cândido Rodrigues","10153Canitar","10203Capão Bonito","10302Capela Do Alto","10401Capivari","10500Caraguatatuba","10609Carapicuíba","10708Cardoso","10807Casa Branca","10906Cássia Dos Coqueiros","11003Castilho","11102Catanduva","11201Catiguá","11300Cedral","11409Cerqueira César","11508Cerquilho","11607Cesário Lange","11706Charqueada","11904Clementina","12001Colina","12100Colômbia","12209Conchal","12308Conchas","12407Cordeirópolis","12506Coroados","12605Coronel Macedo","12704Corumbataí","12803Cosmópolis","12902Cosmorama","13009Cotia","13108Cravinhos","13207Cristais Paulista","13306Cruzália","13405Cruzeiro","13504Cubatão","13603Cunha","13702Descalvado","13801Diadema","13850Dirce Reis","13900Divinolândia","14007Dobrada","14106Dois Córregos","14205Dolcinópolis","14304Dourado","14403Dracena","14502Duartina","14601Dumont","14700Echaporã","14809Eldorado","14908Elias Fausto","14924Elisiário","14957Embaúba","15004Embu","15103Embu-Guaçu","15129Emilianópolis","15152Engenheiro Coelho","15186Espírito Santo Do Pinhal","15194Espírito Santo Do Turvo","15202Estrela D'Oeste","15301Estrela Do Norte","15350Euclides Da Cunha Paulista","15400Fartura","15509Fernandópolis","15608Fernando Prestes","15657Fernão","15707Ferraz De Vasconcelos","15806Flora Rica","15905Floreal","16002Flórida Paulista","16101Florínia","16200Franca","16309Francisco Morato","16408Franco Da Rocha","16507Gabriel Monteiro","16606Gália","16705Garça","16804Gastão Vidigal","16853Gavião Peixoto","16903General Salgado","17000Getulina","17109Glicério","17208Guaiçara","17307Guaimbê","17406Guaíra","17505Guapiaçu","17604Guapiara","17703Guará","17802Guaraçaí","17901Guaraci","18008Guarani D'Oeste","18107Guarantã","18206Guararapes","18305Guararema","18404Guaratinguetá","18503Guareí","18602Guariba","18701Guarujá","18800Guarulhos","18859Guatapará","18909Guzolândia","19006Herculândia","19055Holambra","19071Hortolândia","19105Iacanga","19204Iacri","19253Iaras","19303Ibaté","19402Ibirá","19501Ibirarema","19600Ibitinga","19709Ibiúna","19808Icém","19907Iepê","20004Igaraçu Do Tietê","20103Igarapava","20202Igaratá","20301Iguape","20400Ilhabela","20426Ilha Comprida","20442Ilha Solteira","20509Indaiatuba","20608Indiana","20707Indiaporã","20806Inúbia Paulista","20905Ipaussu","21002Iperó","21101Ipeúna","21150Ipiguá","21200Iporanga","21309Ipuã","21408Iracemápolis","21507Irapuã","21606Irapuru","21705Itaberá","21804Itaí","21903Itajobi","22000Itaju","22109Itanhaém","22158Itaóca","22208Itapecerica Da Serra","22307Itapetininga","22406Itapeva","22505Itapevi","22604Itapira","22653Itapirapuã Paulista","22703Itápolis","22802Itaporanga","22901Itapuí","23008Itapura","23107Itaquaquecetuba","23206Itararé","23305Itariri","23404Itatiba","23503Itatinga","23602Itirapina","23701Itirapuã","23800Itobi","23909Itu","24006Itupeva","24105Ituverava","24204Jaborandi","24303Jaboticabal","24402Jacareí","24501Jaci","24600Jacupiranga","24709Jaguariúna","24808Jales","24907Jambeiro","25003Jandira","25102Jardinópolis","25201Jarinu","25300Jaú","25409Jeriquara","25508Joanópolis","25607João Ramalho","25706José Bonifácio","25805Júlio Mesquita","25854Jumirim","25904Jundiaí","26001Junqueirópolis","26100Juquiá","26209Juquitiba","26308Lagoinha","26407Laranjal Paulista","26506Lavínia","26605Lavrinhas","26704Leme","26803Lençóis Paulista","26902Limeira","27009Lindóia","27108Lins","27207Lorena","27256Lourdes","27306Louveira","27405Lucélia","27504Lucianópolis","27603Luís Antônio","27702Luiziânia","27801Lupércio","27900Lutécia","28007Macatuba","28106Macaubal","28205Macedônia","28304Magda","28403Mairinque","28502Mairiporã","28601Manduri","28700Marabá Paulista","28809Maracaí","28858Marapoama","28908Mariápolis","29005Marília","29104Marinópolis","29203Martinópolis","29302Matão","29401Mauá","29500Mendonça","29609Meridiano","29658Mesópolis","29708Miguelópolis","29807Mineiros Do Tietê","29906Miracatu","30003Mira Estrela","30102Mirandópolis","30201Mirante Do Paranapanema","30300Mirassol","30409Mirassolândia","30508Mococa","30607Mogi Das Cruzes","30706Mogi Guaçu","30805Moji Mirim","30904Mombuca","31001Monções","31100Mongaguá","31209Monte Alegre Do Sul","31308Monte Alto","31407Monte Aprazível","31506Monte Azul Paulista","31605Monte Castelo","31704Monteiro Lobato","31803Monte Mor","31902Morro Agudo","32009Morungaba","32058Motuca","32108Murutinga Do Sul","32157Nantes","32207Narandiba","32306Natividade Da Serra","32405Nazaré Paulista","32504Neves Paulista","32603Nhandeara","32702Nipoã","32801Nova Aliança","32827Nova Campina","32843Nova Canaã Paulista","32868Nova Castilho","32900Nova Europa","33007Nova Granada","33106Nova Guataporanga","33205Nova Independência","33254Novais","33304Nova Luzitânia","33403Nova Odessa","33502Novo Horizonte","33601Nuporanga","33700Ocauçu","33809Óleo","33908Olímpia","34005Onda Verde","34104Oriente","34203Orindiúva","34302Orlândia","34401Osasco","34500Oscar Bressane","34609Osvaldo Cruz","34708Ourinhos","34757Ouroeste","34807Ouro Verde","34906Pacaembu","35002Palestina","35101Palmares Paulista","35200Palmeira D'Oeste","35309Palmital","35408Panorama","35507Paraguaçu Paulista","35606Paraibuna","35705Paraíso","35804Paranapanema","35903Paranapuã","36000Parapuã","36109Pardinho","36208Pariquera-Açu","36257Parisi","36307Patrocínio Paulista","36406Paulicéia","36505Paulínia","36570Paulistânia","36604Paulo De Faria","36703Pederneiras","36802Pedra Bela","36901Pedranópolis","37008Pedregulho","37107Pedreira","37156Pedrinhas Paulista","37206Pedro De Toledo","37305Penápolis","37404Pereira Barreto","37503Pereiras","37602Peruíbe","37701Piacatu","37800Piedade","37909Pilar Do Sul","38006Pindamonhangaba","38105Pindorama","38204Pinhalzinho","38303Piquerobi","38501Piquete","38600Piracaia","38709Piracicaba","38808Piraju","38907Pirajuí","39004Pirangi","39103Pirapora Do Bom Jesus","39202Pirapozinho","39301Pirassununga","39400Piratininga","39509Pitangueiras","39608Planalto","39707Platina","39806Poá","39905Poloni","40002Pompéia","40101Pongaí","40200Pontal","40259Pontalinda","40309Pontes Gestal","40408Populina","40507Porangaba","40606Porto Feliz","40705Porto Ferreira","40754Potim","40804Potirendaba","40853Pracinha","40903Pradópolis","41000Praia Grande","41059Pratânia","41109Presidente Alves","41208Presidente Bernardes","41307Presidente Epitácio","41406Presidente Prudente","41505Presidente Venceslau","41604Promissão","41653Quadra","41703Quatá","41802Queiroz","41901Queluz","42008Quintana","42107Rafard","42206Rancharia","42305Redenção Da Serra","42404Regente Feijó","42503Reginópolis","42602Registro","42701Restinga","42800Ribeira","42909Ribeirão Bonito","43006Ribeirão Branco","43105Ribeirão Corrente","43204Ribeirão Do Sul","43238Ribeirão Dos Índios","43253Ribeirão Grande","43303Ribeirão Pires","43402Ribeirão Preto","43501Riversul","43600Rifaina","43709Rincão","43808Rinópolis","43907Rio Claro","44004Rio Das Pedras","44103Rio Grande Da Serra","44202Riolândia","44251Rosana","44301Roseira","44400Rubiácea","44509Rubinéia","44608Sabino","44707Sagres","44806Sales","44905Sales Oliveira","45001Salesópolis","45100Salmourão","45159Saltinho","45209Salto","45308Salto De Pirapora","45407Salto Grande","45506Sandovalina","45605Santa Adélia","45704Santa Albertina","45803Santa Bárbara D'Oeste","46009Santa Branca","46108Santa Clara D'Oeste","46207Santa Cruz Da Conceição","46256Santa Cruz Da Esperança","46306Santa Cruz Das Palmeiras","46405Santa Cruz Do Rio Pardo","46504Santa Ernestina","46603Santa Fé Do Sul","46702Santa Gertrudes","46801Santa Isabel","46900Santa Lúcia","47007Santa Maria Da Serra","47106Santa Mercedes","47205Santana Da Ponte Pensa","47304Santana De Parnaíba","47403Santa Rita D'Oeste","47502Santa Rita Do Passa Quatro","47601Santa Rosa De Viterbo","47650Santa Salete","47700Santo Anastácio","47809Santo André","47908Santo Antônio Da Alegria","48005Santo Antônio De Posse","48054Santo Antônio Do Aracanguá","48104Santo Antônio Do Jardim","48203Santo Antônio Do Pinhal","48302Santo Expedito","48401Santópolis Do Aguapeí","48500Santos","48609São Bento Do Sapucaí","48708São Bernardo Do Campo","48807São Caetano Do Sul","48906São Carlos","49003São Francisco","49102São João Da Boa Vista","49201São João Das Duas Pontes","49250São João De Iracema","49300São João Do Pau D'Alho","49409São Joaquim Da Barra","49508São José Da Bela Vista","49607São José Do Barreiro","49706São José Do Rio Pardo","49805São José Do Rio Preto","49904São José Dos Campos","49953São Lourenço Da Serra","50001São Luís Do Paraitinga","50100São Manuel","50209São Miguel Arcanjo","50308São Paulo","50407São Pedro","50506São Pedro Do Turvo","50605São Roque","50704São Sebastião","50803São Sebastião Da Grama","50902São Simão","51009São Vicente","51108Sarapuí","51207Sarutaiá","51306Sebastianópolis Do Sul","51405Serra Azul","51504Serrana","51603Serra Negra","51702Sertãozinho","51801Sete Barras","51900Severínia","52007Silveiras","52106Socorro","52205Sorocaba","52304Sud Mennucci","52403Sumaré","52502Suzano","52551Suzanápolis","52601Tabapuã","52700Tabatinga","52809Taboão Da Serra","52908Taciba","53005Taguaí","53104Taiaçu","53203Taiúva","53302Tambaú","53401Tanabi","53500Tapiraí","53609Tapiratiba","53658Taquaral","53708Taquaritinga","53807Taquarituba","53856Taquarivaí","53906Tarabai","53955Tarumã","54003Tatuí","54102Taubaté","54201Tejupá","54300Teodoro Sampaio","54409Terra Roxa","54508Tietê","54607Timburi","54656Torre De Pedra","54706Torrinha","54755Trabiju","54805Tremembé","54904Três Fronteiras","54953Tuiuti","55000Tupã","55109Tupi Paulista","55208Turiúba","55307Turmalina","55356Ubarana","55406Ubatuba","55505Ubirajara","55604Uchoa","55703União Paulista","55802Urânia","55901Uru","56008Urupês","56107Valentim Gentil","56206Valinhos","56305Valparaíso","56354Vargem","56404Vargem Grande Do Sul","56453Vargem Grande Paulista","56503Várzea Paulista","56602Vera Cruz","56701Vinhedo","56800Viradouro","56909Vista Alegre Do Alto","56958Vitória Brasil","57006Votorantim","57105Votuporanga","57154Zacarias","57204Chavantes","57303Estiva Gerbi"],"AM":["00029Alvarães","00060Amaturá","00086Anamã","00102Anori","00144Apuí","00201Atalaia Do Norte","00300Autazes","00409Barcelos","00508Barreirinha","00607Benjamin Constant","00631Beruri","00680Boa Vista Do Ramos","00706Boca Do Acre","00805Borba","00839Caapiranga","00904Canutama","01001Carauari","01100Careiro","01159Careiro Da Várzea","01209Coari","01308Codajás","01407Eirunepé","01506Envira","01605Fonte Boa","01654Guajará","01704Humaitá","01803Ipixuna","01852Iranduba","01902Itacoatiara","01951Itamarati","02009Itapiranga","02108Japurá","02207Juruá","02306Jutaí","02405Lábrea","02504Manacapuru","02553Manaquiri","02603Manaus","02702Manicoré","02801Maraã","02900Maués","03007Nhamundá","03106Nova Olinda Do Norte","03205Novo Airão","03304Novo Aripuanã","03403Parintins","03502Pauini","03536Presidente Figueiredo","03569Rio Preto Da Eva","03601Santa Isabel Do Rio Negro","03700Santo Antônio Do Içá","03809São Gabriel Da Cachoeira","03908São Paulo De Olivença","03957São Sebastião Do Uatumã","04005Silves","04062Tabatinga","04104Tapauá","04203Tefé","04237Tonantins","04260Uarini","04302Urucará","04401Urucurituba"],"RR":["00027Amajari","00050Alto Alegre","00100Boa Vista","00159Bonfim","00175Cantá","00209Caracaraí","00233Caroebe","00282Iracema","00308Mucajaí","00407Normandia","00456Pacaraima","00472Rorainópolis","00506São João Da Baliza","00605São Luiz","00704Uiramutã"],"DF":["00108Brasília"],"MS":["00203Água Clara","00252Alcinópolis","00609Amambai","00708Anastácio","00807Anaurilândia","00856Angélica","00906Antônio João","01003Aparecida Do Taboado","01102Aquidauana","01243Aral Moreira","01508Bandeirantes","01904Bataguassu","02001Batayporã","02100Bela Vista","02159Bodoquena","02209Bonito","02308Brasilândia","02407Caarapó","02605Camapuã","02704Campo Grande","02803Caracol","02902Cassilândia","02951Chapadão Do Sul","03108Corguinho","03157Coronel Sapucaia","03207Corumbá","03256Costa Rica","03306Coxim","03454Deodápolis","03488Dois Irmãos Do Buriti","03504Douradina","03702Dourados","03751Eldorado","03801Fátima Do Sul","03900Figueirão","04007Glória De Dourados","04106Guia Lopes Da Laguna","04304Iguatemi","04403Inocência","04502Itaporã","04601Itaquiraí","04700Ivinhema","04809Japorã","04908Jaraguari","05004Jardim","05103Jateí","05152Juti","05202Ladário","05251Laguna Carapã","05400Maracaju","05608Miranda","05681Mundo Novo","05707Naviraí","05806Nioaque","06002Nova Alvorada Do Sul","06200Nova Andradina","06259Novo Horizonte Do Sul","06309Paranaíba","06358Paranhos","06408Pedro Gomes","06606Ponta Porã","06903Porto Murtinho","07109Ribas Do Rio Pardo","07208Rio Brilhante","07307Rio Negro","07406Rio Verde De Mato Grosso","07505Rochedo","07554Santa Rita Do Pardo","07695São Gabriel Do Oeste","07703Sete Quedas","07802Selvíria","07901Sidrolândia","07935Sonora","07950Tacuru","07976Taquarussu","08008Terenos","08305Três Lagoas","08404Vicentina"],"PB":["00106Água Branca","00205Aguiar","00304Alagoa Grande","00403Alagoa Nova","00502Alagoinha","00536Alcantil","00577Algodão De Jandaíra","00601Alhandra","00700São João Do Rio Do Peixe","00734Amparo","00775Aparecida","00809Araçagi","00908Arara","01005Araruna","01104Areia","01153Areia De Baraúnas","01203Areial","01302Aroeiras","01351Assunção","01401Baía Da Traição","01500Bananeiras","01534Baraúna","01575Barra De Santana","01609Barra De Santa Rosa","01708Barra De São Miguel","01807Bayeux","01906Belém","02003Belém Do Brejo Do Cruz","02052Bernardino Batista","02102Boa Ventura","02151Boa Vista","02201Bom Jesus","02300Bom Sucesso","02409Bonito De Santa Fé","02508Boqueirão","02607Igaracy","02706Borborema","02805Brejo Do Cruz","02904Brejo Dos Santos","03001Caaporã","03100Cabaceiras","03209Cabedelo","03308Cachoeira Dos Índios","03407Cacimba De Areia","03506Cacimba De Dentro","03555Cacimbas","03605Caiçara","03704Cajazeiras","03753Cajazeirinhas","03803Caldas Brandão","03902Camalaú","04009Campina Grande","04033Capim","04074Caraúbas","04108Carrapateira","04157Casserengue","04207Catingueira","04306Catolé Do Rocha","04355Caturité","04405Conceição","04504Condado","04603Conde","04702Congo","04801Coremas","04850Coxixola","04900Cruz Do Espírito Santo","05006Cubati","05105Cuité","05204Cuitegi","05238Cuité De Mamanguape","05279Curral De Cima","05303Curral Velho","05352Damião","05402Desterro","05501Vista Serrana","05600Diamante","05709Dona Inês","05808Duas Estradas","05907Emas","06004Esperança","06103Fagundes","06202Frei Martinho","06251Gado Bravo","06301Guarabira","06400Gurinhém","06509Gurjão","06608Ibiara","06707Imaculada","06806Ingá","06905Itabaiana","07002Itaporanga","07101Itapororoca","07200Itatuba","07309Jacaraú","07408Jericó","07507João Pessoa","07606Juarez Távora","07705Juazeirinho","07804Junco Do Seridó","07903Juripiranga","08000Juru","08109Lagoa","08208Lagoa De Dentro","08307Lagoa Seca","08406Lastro","08505Livramento","08554Logradouro","08604Lucena","08703Mãe D'Água","08802Malta","08901Mamanguape","09008Manaíra","09057Marcação","09107Mari","09156Marizópolis","09206Massaranduba","09305Mataraca","09339Matinhas","09370Mato Grosso","09396Maturéia","09404Mogeiro","09503Montadas","09602Monte Horebe","09701Monteiro","09800Mulungu","09909Natuba","10006Nazarezinho","10105Nova Floresta","10204Nova Olinda","10303Nova Palmeira","10402Olho D'Água","10501Olivedos","10600Ouro Velho","10659Parari","10709Passagem","10808Patos","10907Paulista","11004Pedra Branca","11103Pedra Lavrada","11202Pedras De Fogo","11301Piancó","11400Picuí","11509Pilar","11608Pilões","11707Pilõezinhos","11806Pirpirituba","11905Pitimbu","12002Pocinhos","12036Poço Dantas","12077Poço De José De Moura","12101Pombal","12200Prata","12309Princesa Isabel","12408Puxinanã","12507Queimadas","12606Quixabá","12705Remígio","12721Pedro Régis","12747Riachão","12754Riachão Do Bacamarte","12762Riachão Do Poço","12788Riacho De Santo Antônio","12804Riacho Dos Cavalos","12903Rio Tinto","13000Salgadinho","13109Salgado De São Félix","13158Santa Cecília","13208Santa Cruz","13307Santa Helena","13356Santa Inês","13406Santa Luzia","13505Santana De Mangueira","13604Santana Dos Garrotes","13653Santarém","13703Santa Rita","13802Santa Teresinha","13851Santo André","13901São Bento","13927São Bentinho","13943São Domingos Do Cariri","13968São Domingos","13984São Francisco","14008São João Do Cariri","14107São João Do Tigre","14206São José Da Lagoa Tapada","14305São José De Caiana","14404São José De Espinharas","14453São José Dos Ramos","14503São José De Piranhas","14552São José De Princesa","14602São José Do Bonfim","14651São José Do Brejo Do Cruz","14701São José Do Sabugi","14800São José Dos Cordeiros","14909São Mamede","15005São Miguel De Taipu","15104São Sebastião De Lagoa De Roça","15203São Sebastião Do Umbuzeiro","15302Sapé","15401Seridó","15500Serra Branca","15609Serra Da Raiz","15708Serra Grande","15807Serra Redonda","15906Serraria","15930Sertãozinho","15971Sobrado","16003Solânea","16102Soledade","16151Sossêgo","16201Sousa","16300Sumé","16409Tacima","16508Taperoá","16607Tavares","16706Teixeira","16755Tenório","16805Triunfo","16904Uiraúna","17001Umbuzeiro","17100Várzea","17209Vieirópolis","17407Zabelê"],"RN":["00109Acari","00208Açu","00307Afonso Bezerra","00406Água Nova","00505Alexandria","00604Almino Afonso","00703Alto Do Rodrigues","00802Angicos","00901Antônio Martins","01008Apodi","01107Areia Branca","01206Arês","01305Augusto Severo","01404Baía Formosa","01453Baraúna","01503Barcelona","01602Bento Fernandes","01651Bodó","01701Bom Jesus","01800Brejinho","01859Caiçara Do Norte","01909Caiçara Do Rio Do Vento","02006Caicó","02105Campo Redondo","02204Canguaretama","02303Caraúbas","02402Carnaúba Dos Dantas","02501Carnaubais","02600Ceará-Mirim","02709Cerro Corá","02808Coronel Ezequiel","02907Coronel João Pessoa","03004Cruzeta","03103Currais Novos","03202Doutor Severiano","03251Parnamirim","03301Encanto","03400Equador","03509Espírito Santo","03608Extremoz","03707Felipe Guerra","03756Fernando Pedroza","03806Florânia","03905Francisco Dantas","04002Frutuoso Gomes","04101Galinhos","04200Goianinha","04309Governador Dix-Sept Rosado","04408Grossos","04507Guamaré","04606Ielmo Marinho","04705Ipanguaçu","04804Ipueira","04853Itajá","04903Itaú","05009Jaçanã","05108Jandaíra","05207Janduís","05306Januário Cicco","05405Japi","05504Jardim De Angicos","05603Jardim De Piranhas","05702Jardim Do Seridó","05801João Câmara","05900João Dias","06007José Da Penha","06106Jucurutu","06155Jundiá","06205Lagoa D'Anta","06304Lagoa De Pedras","06403Lagoa De Velhos","06502Lagoa Nova","06601Lagoa Salgada","06700Lajes","06809Lajes Pintadas","06908Lucrécia","07005Luís Gomes","07104Macaíba","07203Macau","07252Major Sales","07302Marcelino Vieira","07401Martins","07500Maxaranguape","07609Messias Targino","07708Montanhas","07807Monte Alegre","07906Monte Das Gameleiras","08003Mossoró","08102Natal","08201Nísia Floresta","08300Nova Cruz","08409Olho-D'Água Do Borges","08508Ouro Branco","08607Paraná","08706Paraú","08805Parazinho","08904Parelhas","08953Rio Do Fogo","09100Passa E Fica","09209Passagem","09308Patu","09332Santa Maria","09407Pau Dos Ferros","09506Pedra Grande","09605Pedra Preta","09704Pedro Avelino","09803Pedro Velho","09902Pendências","10009Pilões","10108Poço Branco","10207Portalegre","10256Porto Do Mangue","10306Presidente Juscelino","10405Pureza","10504Rafael Fernandes","10603Rafael Godeiro","10702Riacho Da Cruz","10801Riacho De Santana","10900Riachuelo","11007Rodolfo Fernandes","11056Tibau","11106Ruy Barbosa","11205Santa Cruz","11403Santana Do Matos","11429Santana Do Seridó","11502Santo Antônio","11601São Bento Do Norte","11700São Bento Do Trairí","11809São Fernando","11908São Francisco Do Oeste","12005São Gonçalo Do Amarante","12104São João Do Sabugi","12203São José De Mipibu","12302São José Do Campestre","12401São José Do Seridó","12500São Miguel","12559São Miguel Do Gostoso","12609São Paulo Do Potengi","12708São Pedro","12807São Rafael","12906São Tomé","13003São Vicente","13102Senador Elói De Souza","13201Senador Georgino Avelino","13300Serra De São Bento","13359Serra Do Mel","13409Serra Negra Do Norte","13508Serrinha","13557Serrinha Dos Pintos","13607Severiano Melo","13706Sítio Novo","13805Taboleiro Grande","13904Taipu","14001Tangará","14100Tenente Ananias","14159Tenente Laurentino Cruz","14209Tibau Do Sul","14308Timbaúba Dos Batistas","14407Touros","14456Triunfo Potiguar","14506Umarizal","14605Upanema","14704Várzea","14753Venha-Ver","14803Vera Cruz","14902Viçosa","15008Vila Flor"],"GO":["00050Abadia De Goiás","00100Abadiânia","00134Acreúna","00159Adelândia","00175Água Fria De Goiás","00209Água Limpa","00258Águas Lindas De Goiás","00308Alexânia","00506Aloândia","00555Alto Horizonte","00605Alto Paraíso De Goiás","00803Alvorada Do Norte","00829Amaralina","00852Americano Do Brasil","00902Amorinópolis","01108Anápolis","01207Anhanguera","01306Anicuns","01405Aparecida De Goiânia","01454Aparecida Do Rio Doce","01504Aporé","01603Araçu","01702Aragarças","01801Aragoiânia","02155Araguapaz","02353Arenópolis","02502Aruanã","02601Aurilândia","02809Avelinópolis","03104Baliza","03203Barro Alto","03302Bela Vista De Goiás","03401Bom Jardim De Goiás","03500Bom Jesus De Goiás","03559Bonfinópolis","03575Bonópolis","03609Brazabrantes","03807Britânia","03906Buriti Alegre","03939Buriti De Goiás","03962Buritinópolis","04003Cabeceiras","04102Cachoeira Alta","04201Cachoeira De Goiás","04250Cachoeira Dourada","04300Caçu","04409Caiapônia","04508Caldas Novas","04557Caldazinha","04607Campestre De Goiás","04656Campinaçu","04706Campinorte","04805Campo Alegre De Goiás","04854Campo Limpo De Goiás","04904Campos Belos","04953Campos Verdes","05000Carmo Do Rio Verde","05059Castelândia","05109Catalão","05208Caturaí","05307Cavalcante","05406Ceres","05455Cezarina","05471Chapadão Do Céu","05497Cidade Ocidental","05513Cocalzinho De Goiás","05521Colinas Do Sul","05703Córrego Do Ouro","05802Corumbá De Goiás","05901Corumbaíba","06206Cristalina","06305Cristianópolis","06404Crixás","06503Cromínia","06602Cumari","06701Damianópolis","06800Damolândia","06909Davinópolis","07105Diorama","07253Doverlândia","07352Edealina","07402Edéia","07501Estrela Do Norte","07535Faina","07600Fazenda Nova","07808Firminópolis","07907Flores De Goiás","08004Formosa","08103Formoso","08152Gameleira De Goiás","08301Divinópolis De Goiás","08400Goianápolis","08509Goiandira","08608Goianésia","08707Goiânia","08806Goianira","08905Goiás","09101Goiatuba","09150Gouvelândia","09200Guapó","09291Guaraíta","09408Guarani De Goiás","09457Guarinos","09606Heitoraí","09705Hidrolândia","09804Hidrolina","09903Iaciara","09937Inaciolândia","09952Indiara","10000Inhumas","10109Ipameri","10158Ipiranga De Goiás","10208Iporá","10307Israelândia","10406Itaberaí","10562Itaguari","10604Itaguaru","10802Itajá","10901Itapaci","11008Itapirapuã","11206Itapuranga","11305Itarumã","11404Itauçu","11503Itumbiara","11602Ivolândia","11701Jandaia","11800Jaraguá","11909Jataí","12006Jaupaci","12055Jesúpolis","12105Joviânia","12204Jussara","12253Lagoa Santa","12303Leopoldo De Bulhões","12501Luziânia","12600Mairipotaba","12709Mambaí","12808Mara Rosa","12907Marzagão","12956Matrinchã","13004Maurilândia","13053Mimoso De Goiás","13087Minaçu","13103Mineiros","13400Moiporá","13509Monte Alegre De Goiás","13707Montes Claros De Goiás","13756Montividiu","13772Montividiu Do Norte","13806Morrinhos","13855Morro Agudo De Goiás","13905Mossâmedes","14002Mozarlândia","14051Mundo Novo","14101Mutunópolis","14408Nazário","14507Nerópolis","14606Niquelândia","14705Nova América","14804Nova Aurora","14838Nova Crixás","14861Nova Glória","14879Nova Iguaçu De Goiás","14903Nova Roma","15009Nova Veneza","15207Novo Brasil","15231Novo Gama","15256Novo Planalto","15306Orizona","15405Ouro Verde De Goiás","15504Ouvidor","15603Padre Bernardo","15652Palestina De Goiás","15702Palmeiras De Goiás","15801Palmelo","15900Palminópolis","16007Panamá","16304Paranaiguara","16403Paraúna","16452Perolândia","16809Petrolina De Goiás","16908Pilar De Goiás","17104Piracanjuba","17203Piranhas","17302Pirenópolis","17401Pires Do Rio","17609Planaltina","17708Pontalina","18003Porangatu","18052Porteirão","18102Portelândia","18300Posse","18391Professor Jamil","18508Quirinópolis","18607Rialma","18706Rianápolis","18789Rio Quente","18805Rio Verde","18904Rubiataba","19001Sanclerlândia","19100Santa Bárbara De Goiás","19209Santa Cruz De Goiás","19258Santa Fé De Goiás","19308Santa Helena De Goiás","19357Santa Isabel","19407Santa Rita Do Araguaia","19456Santa Rita Do Novo Destino","19506Santa Rosa De Goiás","19605Santa Tereza De Goiás","19704Santa Terezinha De Goiás","19712Santo Antônio Da Barra","19738Santo Antônio De Goiás","19753Santo Antônio Do Descoberto","19803São Domingos","19902São Francisco De Goiás","20009São João D'Aliança","20058São João Da Paraúna","20108São Luís De Montes Belos","20157São Luíz Do Norte","20207São Miguel Do Araguaia","20264São Miguel Do Passa Quatro","20280São Patrício","20405São Simão","20454Senador Canedo","20504Serranópolis","20603Silvânia","20686Simolândia","20702Sítio D'Abadia","21007Taquaral De Goiás","21080Teresina De Goiás","21197Terezópolis De Goiás","21304Três Ranchos","21403Trindade","21452Trombas","21502Turvânia","21551Turvelândia","21577Uirapuru","21601Uruaçu","21700Uruana","21809Urutaí","21858Valparaíso De Goiás","21908Varjão","22005Vianópolis","22054Vicentinópolis","22203Vila Boa","22302Vila Propício"],"MG":["00104Abadia Dos Dourados","00203Abaeté","00302Abre Campo","00401Acaiaca","00500Açucena","00609Água Boa","00708Água Comprida","00807Aguanil","00906Águas Formosas","01003Águas Vermelhas","01102Aimorés","01201Aiuruoca","01300Alagoa","01409Albertina","01508Além Paraíba","01607Alfenas","01631Alfredo Vasconcelos","01706Almenara","01805Alpercata","01904Alpinópolis","02001Alterosa","02050Alto Caparaó","02100Alto Rio Doce","02209Alvarenga","02308Alvinópolis","02407Alvorada De Minas","02506Amparo Do Serra","02605Andradas","02704Cachoeira De Pajeú","02803Andrelândia","02852Angelândia","02902Antônio Carlos","03009Antônio Dias","03108Antônio Prado De Minas","03207Araçaí","03306Aracitaba","03405Araçuaí","03504Araguari","03603Arantina","03702Araponga","03751Araporã","03801Arapuá","03900Araújos","04007Araxá","04106Arceburgo","04205Arcos","04304Areado","04403Argirita","04452Aricanduva","04502Arinos","04601Astolfo Dutra","04700Ataléia","04809Augusto De Lima","04908Baependi","05004Baldim","05103Bambuí","05202Bandeira","05301Bandeira Do Sul","05400Barão De Cocais","05509Barão De Monte Alto","05608Barbacena","05707Barra Longa","05905Barroso","06002Bela Vista De Minas","06101Belmiro Braga","06200Belo Horizonte","06309Belo Oriente","06408Belo Vale","06507Berilo","06606Bertópolis","06655Berizal","06705Betim","06804Bias Fortes","06903Bicas","07000Biquinhas","07109Boa Esperança","07208Bocaina De Minas","07307Bocaiúva","07406Bom Despacho","07505Bom Jardim De Minas","07604Bom Jesus Da Penha","07703Bom Jesus Do Amparo","07802Bom Jesus Do Galho","07901Bom Repouso","08008Bom Sucesso","08107Bonfim","08206Bonfinópolis De Minas","08255Bonito De Minas","08305Borda Da Mata","08404Botelhos","08503Botumirim","08552Brasilândia De Minas","08602Brasília De Minas","08701Brás Pires","08800Braúnas","08909Brasópolis","09006Brumadinho","09105Bueno Brandão","09204Buenópolis","09253Bugre","09303Buritis","09402Buritizeiro","09451Cabeceira Grande","09501Cabo Verde","09600Cachoeira Da Prata","09709Cachoeira De Minas","09808Cachoeira Dourada","09907Caetanópolis","10004Caeté","10103Caiana","10202Cajuri","10301Caldas","10400Camacho","10509Camanducaia","10608Cambuí","10707Cambuquira","10806Campanário","10905Campanha","11002Campestre","11101Campina Verde","11150Campo Azul","11200Campo Belo","11309Campo Do Meio","11408Campo Florido","11507Campos Altos","11606Campos Gerais","11705Canaã","11804Canápolis","11903Cana Verde","12000Candeias","12059Cantagalo","12109Caparaó","12208Capela Nova","12307Capelinha","12406Capetinga","12505Capim Branco","12604Capinópolis","12653Capitão Andrade","12703Capitão Enéas","12802Capitólio","12901Caputira","13008Caraí","13107Caranaíba","13206Carandaí","13305Carangola","13404Caratinga","13503Carbonita","13602Careaçu","13701Carlos Chagas","13800Carmésia","13909Carmo Da Cachoeira","14006Carmo Da Mata","14105Carmo De Minas","14204Carmo Do Cajuru","14303Carmo Do Paranaíba","14402Carmo Do Rio Claro","14501Carmópolis De Minas","14550Carneirinho","14600Carrancas","14709Carvalhópolis","14808Carvalhos","14907Casa Grande","15003Cascalho Rico","15102Cássia","15201Conceição Da Barra De Minas","15300Cataguases","15359Catas Altas","15409Catas Altas Da Noruega","15458Catuji","15474Catuti","15508Caxambu","15607Cedro Do Abaeté","15706Central De Minas","15805Centralina","15904Chácara","16001Chalé","16100Chapada Do Norte","16159Chapada Gaúcha","16209Chiador","16308Cipotânea","16407Claraval","16506Claro Dos Poções","16605Cláudio","16704Coimbra","16803Coluna","16902Comendador Gomes","17009Comercinho","17108Conceição Da Aparecida","17207Conceição Das Pedras","17306Conceição Das Alagoas","17405Conceição De Ipanema","17504Conceição Do Mato Dentro","17603Conceição Do Pará","17702Conceição Do Rio Verde","17801Conceição Dos Ouros","17836Cônego Marinho","17876Confins","17900Congonhal","18007Congonhas","18106Congonhas Do Norte","18205Conquista","18304Conselheiro Lafaiete","18403Conselheiro Pena","18502Consolação","18601Contagem","18700Coqueiral","18809Coração De Jesus","18908Cordisburgo","19005Cordislândia","19104Corinto","19203Coroaci","19302Coromandel","19401Coronel Fabriciano","19500Coronel Murta","19609Coronel Pacheco","19708Coronel Xavier Chaves","19807Córrego Danta","19906Córrego Do Bom Jesus","19955Córrego Fundo","20003Córrego Novo","20102Couto De Magalhães De Minas","20151Crisólita","20201Cristais","20300Cristália","20409Cristiano Otoni","20508Cristina","20607Crucilândia","20706Cruzeiro Da Fortaleza","20805Cruzília","20839Cuparaque","20870Curral De Dentro","20904Curvelo","21001Datas","21100Delfim Moreira","21209Delfinópolis","21258Delta","21308Descoberto","21407Desterro De Entre Rios","21506Desterro Do Melo","21605Diamantina","21704Diogo De Vasconcelos","21803Dionísio","21902Divinésia","22009Divino","22108Divino Das Laranjeiras","22207Divinolândia De Minas","22306Divinópolis","22355Divisa Alegre","22405Divisa Nova","22454Divisópolis","22470Dom Bosco","22504Dom Cavati","22603Dom Joaquim","22702Dom Silvério","22801Dom Viçoso","22900Dona Eusébia","23007Dores De Campos","23106Dores De Guanhães","23205Dores Do Indaiá","23304Dores Do Turvo","23403Doresópolis","23502Douradoquara","23528Durandé","23601Elói Mendes","23700Engenheiro Caldas","23809Engenheiro Navarro","23858Entre Folhas","23908Entre Rios De Minas","24005Ervália","24104Esmeraldas","24203Espera Feliz","24302Espinosa","24401Espírito Santo Do Dourado","24500Estiva","24609Estrela Dalva","24708Estrela Do Indaiá","24807Estrela Do Sul","24906Eugenópolis","25002Ewbank Da Câmara","25101Extrema","25200Fama","25309Faria Lemos","25408Felício Dos Santos","25507São Gonçalo Do Rio Preto","25606Felisburgo","25705Felixlândia","25804Fernandes Tourinho","25903Ferros","25952Fervedouro","26000Florestal","26109Formiga","26208Formoso","26307Fortaleza De Minas","26406Fortuna De Minas","26505Francisco Badaró","26604Francisco Dumont","26703Francisco Sá","26752Franciscópolis","26802Frei Gaspar","26901Frei Inocêncio","26950Frei Lagonegro","27008Fronteira","27057Fronteira Dos Vales","27073Fruta De Leite","27107Frutal","27206Funilândia","27305Galiléia","27339Gameleiras","27354Glaucilândia","27370Goiabeira","27388Goianá","27404Gonçalves","27503Gonzaga","27602Gouveia","27701Governador Valadares","27800Grão Mogol","27909Grupiara","28006Guanhães","28105Guapé","28204Guaraciaba","28253Guaraciama","28303Guaranésia","28402Guarani","28501Guarará","28600Guarda-Mor","28709Guaxupé","28808Guidoval","28907Guimarânia","29004Guiricema","29103Gurinhatã","29202Heliodora","29301Iapu","29400Ibertioga","29509Ibiá","29608Ibiaí","29657Ibiracatu","29707Ibiraci","29806Ibirité","29905Ibitiúra De Minas","30002Ibituruna","30051Icaraí De Minas","30101Igarapé","30200Igaratinga","30309Iguatama","30408Ijaci","30507Ilicínea","30556Imbé De Minas","30606Inconfidentes","30655Indaiabira","30705Indianópolis","30804Ingaí","30903Inhapim","31000Inhaúma","31109Inimutaba","31158Ipaba","31208Ipanema","31307Ipatinga","31406Ipiaçu","31505Ipuiúna","31604Iraí De Minas","31703Itabira","31802Itabirinha","31901Itabirito","32008Itacambira","32107Itacarambi","32206Itaguara","32305Itaipé","32404Itajubá","32503Itamarandiba","32602Itamarati De Minas","32701Itambacuri","32800Itambé Do Mato Dentro","32909Itamogi","33006Itamonte","33105Itanhandu","33204Itanhomi","33303Itaobim","33402Itapagipe","33501Itapecerica","33600Itapeva","33709Itatiaiuçu","33758Itaú De Minas","33808Itaúna","33907Itaverava","34004Itinga","34103Itueta","34202Ituiutaba","34301Itumirim","34400Iturama","34509Itutinga","34608Jaboticatubas","34707Jacinto","34806Jacuí","34905Jacutinga","35001Jaguaraçu","35050Jaíba","35076Jampruca","35100Janaúba","35209Januária","35308Japaraíba","35357Japonvar","35407Jeceaba","35456Jenipapo De Minas","35506Jequeri","35605Jequitaí","35704Jequitibá","35803Jequitinhonha","35902Jesuânia","36009Joaíma","36108Joanésia","36207João Monlevade","36306João Pinheiro","36405Joaquim Felício","36504Jordânia","36520José Gonçalves De Minas","36553José Raydan","36579Josenópolis","36603Nova União","36652Juatuba","36702Juiz De Fora","36801Juramento","36900Juruaia","36959Juvenília","37007Ladainha","37106Lagamar","37205Lagoa Da Prata","37304Lagoa Dos Patos","37403Lagoa Dourada","37502Lagoa Formosa","37536Lagoa Grande","37601Lagoa Santa","37700Lajinha","37809Lambari","37908Lamim","38005Laranjal","38104Lassance","38203Lavras","38302Leandro Ferreira","38351Leme Do Prado","38401Leopoldina","38500Liberdade","38609Lima Duarte","38625Limeira Do Oeste","38658Lontra","38674Luisburgo","38682Luislândia","38708Luminárias","38807Luz","38906Machacalis","39003Machado","39102Madre De Deus De Minas","39201Malacacheta","39250Mamonas","39300Manga","39409Manhuaçu","39508Manhumirim","39607Mantena","39706Maravilhas","39805Mar De Espanha","39904Maria Da Fé","40001Mariana","40100Marilac","40159Mário Campos","40209Maripá De Minas","40308Marliéria","40407Marmelópolis","40506Martinho Campos","40530Martins Soares","40555Mata Verde","40605Materlândia","40704Mateus Leme","40803Matias Barbosa","40852Matias Cardoso","40902Matipó","41009Mato Verde","41108Matozinhos","41207Matutina","41306Medeiros","41405Medina","41504Mendes Pimentel","41603Mercês","41702Mesquita","41801Minas Novas","41900Minduri","42007Mirabela","42106Miradouro","42205Miraí","42254Miravânia","42304Moeda","42403Moema","42502Monjolos","42601Monsenhor Paulo","42700Montalvânia","42809Monte Alegre De Minas","42908Monte Azul","43005Monte Belo","43104Monte Carmelo","43153Monte Formoso","43203Monte Santo De Minas","43302Montes Claros","43401Monte Sião","43450Montezuma","43500Morada Nova De Minas","43609Morro Da Garça","43708Morro Do Pilar","43807Munhoz","43906Muriaé","44003Mutum","44102Muzambinho","44201Nacip Raydan","44300Nanuque","44359Naque","44375Natalândia","44409Natércia","44508Nazareno","44607Nepomuceno","44656Ninheira","44672Nova Belém","44706Nova Era","44805Nova Lima","44904Nova Módica","45000Nova Ponte","45059Nova Porteirinha","45109Nova Resende","45208Nova Serrana","45307Novo Cruzeiro","45356Novo Oriente De Minas","45372Novorizonte","45406Olaria","45455Olhos-D'Água","45505Olímpio Noronha","45604Oliveira","45703Oliveira Fortes","45802Onça De Pitangui","45851Oratórios","45877Orizânia","45901Ouro Branco","46008Ouro Fino","46107Ouro Preto","46206Ouro Verde De Minas","46255Padre Carvalho","46305Padre Paraíso","46404Paineiras","46503Pains","46552Pai Pedro","46602Paiva","46701Palma","46750Palmópolis","46909Papagaios","47006Paracatu","47105Pará De Minas","47204Paraguaçu","47303Paraisópolis","47402Paraopeba","47501Passabém","47600Passa Quatro","47709Passa Tempo","47808Passa-Vinte","47907Passos","47956Patis","48004Patos De Minas","48103Patrocínio","48202Patrocínio Do Muriaé","48301Paula Cândido","48400Paulistas","48509Pavão","48608Peçanha","48707Pedra Azul","48756Pedra Bonita","48806Pedra Do Anta","48905Pedra Do Indaiá","49002Pedra Dourada","49101Pedralva","49150Pedras De Maria Da Cruz","49200Pedrinópolis","49309Pedro Leopoldo","49408Pedro Teixeira","49507Pequeri","49606Pequi","49705Perdigão","49804Perdizes","49903Perdões","49952Periquito","50000Pescador","50109Piau","50158Piedade De Caratinga","50208Piedade De Ponte Nova","50307Piedade Do Rio Grande","50406Piedade Dos Gerais","50505Pimenta","50539Pingo-D'Água","50570Pintópolis","50604Piracema","50703Pirajuba","50802Piranga","50901Piranguçu","51008Piranguinho","51107Pirapetinga","51206Pirapora","51305Piraúba","51404Pitangui","51503Piumhi","51602Planura","51701Poço Fundo","51800Poços De Caldas","51909Pocrane","52006Pompéu","52105Ponte Nova","52131Ponto Chique","52170Ponto Dos Volantes","52204Porteirinha","52303Porto Firme","52402Poté","52501Pouso Alegre","52600Pouso Alto","52709Prados","52808Prata","52907Pratápolis","53004Pratinha","53103Presidente Bernardes","53202Presidente Juscelino","53301Presidente Kubitschek","53400Presidente Olegário","53509Alto Jequitibá","53608Prudente De Morais","53707Quartel Geral","53806Queluzito","53905Raposos","54002Raul Soares","54101Recreio","54150Reduto","54200Resende Costa","54309Resplendor","54408Ressaquinha","54457Riachinho","54507Riacho Dos Machados","54606Ribeirão Das Neves","54705Ribeirão Vermelho","54804Rio Acima","54903Rio Casca","55009Rio Doce","55108Rio Do Prado","55207Rio Espera","55306Rio Manso","55405Rio Novo","55504Rio Paranaíba","55603Rio Pardo De Minas","55702Rio Piracicaba","55801Rio Pomba","55900Rio Preto","56007Rio Vermelho","56106Ritápolis","56205Rochedo De Minas","56304Rodeiro","56403Romaria","56452Rosário Da Limeira","56502Rubelita","56601Rubim","56700Sabará","56809Sabinópolis","56908Sacramento","57005Salinas","57104Salto Da Divisa","57203Santa Bárbara","57252Santa Bárbara Do Leste","57278Santa Bárbara Do Monte Verde","57302Santa Bárbara Do Tugúrio","57336Santa Cruz De Minas","57377Santa Cruz De Salinas","57401Santa Cruz Do Escalvado","57500Santa Efigênia De Minas","57609Santa Fé De Minas","57658Santa Helena De Minas","57708Santa Juliana","57807Santa Luzia","57906Santa Margarida","58003Santa Maria De Itabira","58102Santa Maria Do Salto","58201Santa Maria Do Suaçuí","58300Santana Da Vargem","58409Santana De Cataguases","58508Santana De Pirapama","58607Santana Do Deserto","58706Santana Do Garambéu","58805Santana Do Jacaré","58904Santana Do Manhuaçu","58953Santana Do Paraíso","59001Santana Do Riacho","59100Santana Dos Montes","59209Santa Rita De Caldas","59308Santa Rita De Jacutinga","59357Santa Rita De Minas","59407Santa Rita De Ibitipoca","59506Santa Rita Do Itueto","59605Santa Rita Do Sapucaí","59704Santa Rosa Da Serra","59803Santa Vitória","59902Santo Antônio Do Amparo","60009Santo Antônio Do Aventureiro","60108Santo Antônio Do Grama","60207Santo Antônio Do Itambé","60306Santo Antônio Do Jacinto","60405Santo Antônio Do Monte","60454Santo Antônio Do Retiro","60504Santo Antônio Do Rio Abaixo","60603Santo Hipólito","60702Santos Dumont","60801São Bento Abade","60900São Brás Do Suaçuí","60959São Domingos Das Dores","61007São Domingos Do Prata","61056São Félix De Minas","61106São Francisco","61205São Francisco De Paula","61304São Francisco De Sales","61403São Francisco Do Glória","61502São Geraldo","61601São Geraldo Da Piedade","61650São Geraldo Do Baixio","61700São Gonçalo Do Abaeté","61809São Gonçalo Do Pará","61908São Gonçalo Do Rio Abaixo","62005São Gonçalo Do Sapucaí","62104São Gotardo","62203São João Batista Do Glória","62252São João Da Lagoa","62302São João Da Mata","62401São João Da Ponte","62450São João Das Missões","62500São João Del Rei","62559São João Do Manhuaçu","62575São João Do Manteninha","62609São João Do Oriente","62658São João Do Pacuí","62708São João Do Paraíso","62807São João Evangelista","62906São João Nepomuceno","62922São Joaquim De Bicas","62948São José Da Barra","62955São José Da Lapa","63003São José Da Safira","63102São José Da Varginha","63201São José Do Alegre","63300São José Do Divino","63409São José Do Goiabal","63508São José Do Jacuri","63607São José Do Mantimento","63706São Lourenço","63805São Miguel Do Anta","63904São Pedro Da União","64001São Pedro Dos Ferros","64100São Pedro Do Suaçuí","64209São Romão","64308São Roque De Minas","64407São Sebastião Da Bela Vista","64431São Sebastião Da Vargem Alegre","64472São Sebastião Do Anta","64506São Sebastião Do Maranhão","64605São Sebastião Do Oeste","64704São Sebastião Do Paraíso","64803São Sebastião Do Rio Preto","64902São Sebastião Do Rio Verde","65008São Tiago","65107São Tomás De Aquino","65206São Thomé Das Letras","65305São Vicente De Minas","65404Sapucaí-Mirim","65503Sardoá","65537Sarzedo","65552Setubinha","65560Sem-Peixe","65578Senador Amaral","65602Senador Cortes","65701Senador Firmino","65800Senador José Bento","65909Senador Modestino Gonçalves","66006Senhora De Oliveira","66105Senhora Do Porto","66204Senhora Dos Remédios","66303Sericita","66402Seritinga","66501Serra Azul De Minas","66600Serra Da Saudade","66709Serra Dos Aimorés","66808Serra Do Salitre","66907Serrania","66956Serranópolis De Minas","67004Serranos","67103Serro","67202Sete Lagoas","67301Silveirânia","67400Silvianópolis","67509Simão Pereira","67608Simonésia","67707Sobrália","67806Soledade De Minas","67905Tabuleiro","68002Taiobeiras","68051Taparuba","68101Tapira","68200Tapiraí","68309Taquaraçu De Minas","68408Tarumirim","68507Teixeiras","68606Teófilo Otoni","68705Timóteo","68804Tiradentes","68903Tiros","69000Tocantins","69059Tocos Do Moji","69109Toledo","69208Tombos","69307Três Corações","69356Três Marias","69406Três Pontas","69505Tumiritinga","69604Tupaciguara","69703Turmalina","69802Turvolândia","69901Ubá","70008Ubaí","70057Ubaporanga","70107Uberaba","70206Uberlândia","70305Umburatiba","70404Unaí","70438União De Minas","70479Uruana De Minas","70503Urucânia","70529Urucuia","70578Vargem Alegre","70602Vargem Bonita","70651Vargem Grande Do Rio Pardo","70701Varginha","70750Varjão De Minas","70800Várzea Da Palma","70909Varzelândia","71006Vazante","71030Verdelândia","71071Veredinha","71105Veríssimo","71154Vermelho Novo","71204Vespasiano","71303Viçosa","71402Vieiras","71501Mathias Lobato","71600Virgem Da Lapa","71709Virgínia","71808Virginópolis","71907Virgolândia","72004Visconde Do Rio Branco","72103Volta Grande","72202Wenceslau Braz"],"AL":["00102Água Branca","00201Anadia","00300Arapiraca","00409Atalaia","00508Barra De Santo Antônio","00607Barra De São Miguel","00706Batalha","00805Belém","00904Belo Monte","01001Boca Da Mata","01100Branquinha","01209Cacimbinhas","01308Cajueiro","01357Campestre","01407Campo Alegre","01506Campo Grande","01605Canapi","01704Capela","01803Carneiros","01902Chã Preta","02009Coité Do Nóia","02108Colônia Leopoldina","02207Coqueiro Seco","02306Coruripe","02355Craíbas","02405Delmiro Gouveia","02504Dois Riachos","02553Estrela De Alagoas","02603Feira Grande","02702Feliz Deserto","02801Flexeiras","02900Girau Do Ponciano","03007Ibateguara","03106Igaci","03205Igreja Nova","03304Inhapi","03403Jacaré Dos Homens","03502Jacuípe","03601Japaratinga","03700Jaramataia","03759Jequiá Da Praia","03809Joaquim Gomes","03908Jundiá","04005Junqueiro","04104Lagoa Da Canoa","04203Limoeiro De Anadia","04302Maceió","04401Major Isidoro","04500Maragogi","04609Maravilha","04708Marechal Deodoro","04807Maribondo","04906Mar Vermelho","05002Mata Grande","05101Matriz De Camaragibe","05200Messias","05309Minador Do Negrão","05408Monteirópolis","05507Murici","05606Novo Lino","05705Olho D'Água Das Flores","05804Olho D'Água Do Casado","05903Olho D'Água Grande","06000Olivença","06109Ouro Branco","06208Palestina","06307Palmeira Dos Índios","06406Pão De Açúcar","06422Pariconha","06448Paripueira","06505Passo De Camaragibe","06604Paulo Jacinto","06703Penedo","06802Piaçabuçu","06901Pilar","07008Pindoba","07107Piranhas","07206Poço Das Trincheiras","07305Porto Calvo","07404Porto De Pedras","07503Porto Real Do Colégio","07602Quebrangulo","07701Rio Largo","07800Roteiro","07909Santa Luzia Do Norte","08006Santana Do Ipanema","08105Santana Do Mundaú","08204São Brás","08303São José Da Laje","08402São José Da Tapera","08501São Luís Do Quitunde","08600São Miguel Dos Campos","08709São Miguel Dos Milagres","08808São Sebastião","08907Satuba","08956Senador Rui Palmeira","09004Tanque D'Arca","09103Taquarana","09152Teotônio Vilela","09202Traipu","09301União Dos Palmares","09400Viçosa"],"PE":["00054Abreu E Lima","00104Afogados Da Ingazeira","00203Afrânio","00302Agrestina","00401Água Preta","00500Águas Belas","00609Alagoinha","00708Aliança","00807Altinho","00906Amaraji","01003Angelim","01052Araçoiaba","01102Araripina","01201Arcoverde","01300Barra De Guabiraba","01409Barreiros","01508Belém De Maria","01607Belém Do São Francisco","01706Belo Jardim","01805Betânia","01904Bezerros","02001Bodocó","02100Bom Conselho","02209Bom Jardim","02308Bonito","02407Brejão","02506Brejinho","02605Brejo Da Madre De Deus","02704Buenos Aires","02803Buíque","02902Cabo De Santo Agostinho","03009Cabrobó","03108Cachoeirinha","03207Caetés","03306Calçado","03405Calumbi","03454Camaragibe","03504Camocim De São Félix","03603Camutanga","03702Canhotinho","03801Capoeiras","03900Carnaíba","03926Carnaubeira Da Penha","04007Carpina","04106Caruaru","04155Casinhas","04205Catende","04304Cedro","04403Chã De Alegria","04502Chã Grande","04601Condado","04700Correntes","04809Cortês","04908Cumaru","05004Cupira","05103Custódia","05152Dormentes","05202Escada","05301Exu","05400Feira Nova","05459Fernando De Noronha","05509Ferreiros","05608Flores","05707Floresta","05806Frei Miguelinho","05905Gameleira","06002Garanhuns","06101Glória Do Goitá","06200Goiana","06309Granito","06408Gravatá","06507Iati","06606Ibimirim","06705Ibirajuba","06804Igarassu","06903Iguaraci","07000Inajá","07109Ingazeira","07208Ipojuca","07307Ipubi","07406Itacuruba","07505Itaíba","07604Ilha De Itamaracá","07653Itambé","07703Itapetim","07752Itapissuma","07802Itaquitinga","07901Jaboatão Dos Guararapes","07950Jaqueira","08008Jataúba","08057Jatobá","08107João Alfredo","08206Joaquim Nabuco","08255Jucati","08305Jupi","08404Jurema","08453Lagoa Do Carro","08503Lagoa De Itaenga","08602Lagoa Do Ouro","08701Lagoa Dos Gatos","08750Lagoa Grande","08800Lajedo","08909Limoeiro","09006Macaparana","09105Machados","09154Manari","09204Maraial","09303Mirandiba","09402Moreno","09501Nazaré Da Mata","09600Olinda","09709Orobó","09808Orocó","09907Ouricuri","10004Palmares","10103Palmeirina","10202Panelas","10301Paranatama","10400Parnamirim","10509Passira","10608Paudalho","10707Paulista","10806Pedra","10905Pesqueira","11002Petrolândia","11101Petrolina","11200Poção","11309Pombos","11408Primavera","11507Quipapá","11533Quixaba","11606Recife","11705Riacho Das Almas","11804Ribeirão","11903Rio Formoso","12000Sairé","12109Salgadinho","12208Salgueiro","12307Saloá","12406Sanharó","12455Santa Cruz","12471Santa Cruz Da Baixa Verde","12505Santa Cruz Do Capibaribe","12554Santa Filomena","12604Santa Maria Da Boa Vista","12703Santa Maria Do Cambucá","12802Santa Terezinha","12901São Benedito Do Sul","13008São Bento Do Una","13107São Caitano","13206São João","13305São Joaquim Do Monte","13404São José Da Coroa Grande","13503São José Do Belmonte","13602São José Do Egito","13701São Lourenço Da Mata","13800São Vicente Ferrer","13909Serra Talhada","14006Serrita","14105Sertânia","14204Sirinhaém","14303Moreilândia","14402Solidão","14501Surubim","14600Tabira","14709Tacaimbó","14808Tacaratu","14857Tamandaré","15003Taquaritinga Do Norte","15102Terezinha","15201Terra Nova","15300Timbaúba","15409Toritama","15508Tracunhaém","15607Trindade","15706Triunfo","15805Tupanatinga","15904Tuparetama","16001Venturosa","16100Verdejante","16183Vertente Do Lério","16209Vertentes","16308Vicência","16407Vitória De Santo Antão","16506Xexéu"],"AC":["00013Acrelândia","00054Assis Brasil","00104Brasiléia","00138Bujari","00179Capixaba","00203Cruzeiro Do Sul","00252Epitaciolândia","00302Feijó","00328Jordão","00336Mâncio Lima","00344Manoel Urbano","00351Marechal Thaumaturgo","00385Plácido De Castro","00393Porto Walter","00401Rio Branco","00427Rodrigues Alves","00435Santa Rosa Do Purus","00450Senador Guiomard","00500Sena Madureira","00609Tarauacá","00708Xapuri","00807Porto Acre"],"SC":["00051Abdon Batista","00101Abelardo Luz","00200Agrolândia","00309Agronômica","00408Água Doce","00507Águas De Chapecó","00556Águas Frias","00606Águas Mornas","00705Alfredo Wagner","00754Alto Bela Vista","00804Anchieta","00903Angelina","01000Anita Garibaldi","01109Anitápolis","01208Antônio Carlos","01257Apiúna","01273Arabutã","01307Araquari","01406Araranguá","01505Armazém","01604Arroio Trinta","01653Arvoredo","01703Ascurra","01802Atalanta","01901Aurora","01950Balneário Arroio Do Silva","02008Balneário Camboriú","02057Balneário Barra Do Sul","02073Balneário Gaivota","02081Bandeirante","02099Barra Bonita","02107Barra Velha","02131Bela Vista Do Toldo","02156Belmonte","02206Benedito Novo","02305Biguaçu","02404Blumenau","02438Bocaina Do Sul","02453Bombinhas","02503Bom Jardim Da Serra","02537Bom Jesus","02578Bom Jesus Do Oeste","02602Bom Retiro","02701Botuverá","02800Braço Do Norte","02859Braço Do Trombudo","02875Brunópolis","02909Brusque","03006Caçador","03105Caibi","03154Calmon","03204Camboriú","03253Capão Alto","03303Campo Alegre","03402Campo Belo Do Sul","03501Campo Erê","03600Campos Novos","03709Canelinha","03808Canoinhas","03907Capinzal","03956Capivari De Baixo","04004Catanduvas","04103Caxambu Do Sul","04152Celso Ramos","04178Cerro Negro","04194Chapadão Do Lageado","04202Chapecó","04251Cocal Do Sul","04301Concórdia","04350Cordilheira Alta","04400Coronel Freitas","04459Coronel Martins","04509Corupá","04558Correia Pinto","04608Criciúma","04707Cunha Porã","04756Cunhataí","04806Curitibanos","04905Descanso","05001Dionísio Cerqueira","05100Dona Emma","05159Doutor Pedrinho","05175Entre Rios","05191Ermo","05209Erval Velho","05308Faxinal Dos Guedes","05357Flor Do Sertão","05407Florianópolis","05431Formosa Do Sul","05456Forquilhinha","05506Fraiburgo","05555Frei Rogério","05605Galvão","05704Garopaba","05803Garuva","05902Gaspar","06009Governador Celso Ramos","06108Grão Pará","06207Gravatal","06306Guabiruba","06405Guaraciaba","06504Guaramirim","06603Guarujá Do Sul","06652Guatambú","06702Herval D'Oeste","06751Ibiam","06801Ibicaré","06900Ibirama","07007Içara","07106Ilhota","07205Imaruí","07304Imbituba","07403Imbuia","07502Indaial","07577Iomerê","07601Ipira","07650Iporã Do Oeste","07684Ipuaçu","07700Ipumirim","07759Iraceminha","07809Irani","07858Irati","07908Irineópolis","08005Itá","08104Itaiópolis","08203Itajaí","08302Itapema","08401Itapiranga","08450Itapoá","08500Ituporanga","08609Jaborá","08708Jacinto Machado","08807Jaguaruna","08906Jaraguá Do Sul","08955Jardinópolis","09003Joaçaba","09102Joinville","09151José Boiteux","09177Jupiá","09201Lacerdópolis","09300Lages","09409Laguna","09458Lajeado Grande","09508Laurentino","09607Lauro Muller","09706Lebon Régis","09805Leoberto Leal","09854Lindóia Do Sul","09904Lontras","10001Luiz Alves","10035Luzerna","10050Macieira","10100Mafra","10209Major Gercino","10308Major Vieira","10407Maracajá","10506Maravilha","10555Marema","10605Massaranduba","10704Matos Costa","10803Meleiro","10852Mirim Doce","10902Modelo","11009Mondaí","11058Monte Carlo","11108Monte Castelo","11207Morro Da Fumaça","11256Morro Grande","11306Navegantes","11405Nova Erechim","11454Nova Itaberaba","11504Nova Trento","11603Nova Veneza","11652Novo Horizonte","11702Orleans","11751Otacílio Costa","11801Ouro","11850Ouro Verde","11876Paial","11892Painel","11900Palhoça","12007Palma Sola","12056Palmeira","12106Palmitos","12205Papanduva","12239Paraíso","12254Passo De Torres","12270Passos Maia","12304Paulo Lopes","12403Pedras Grandes","12502Penha","12601Peritiba","12700Petrolândia","12809Balneário Piçarras","12908Pinhalzinho","13005Pinheiro Preto","13104Piratuba","13153Planalto Alegre","13203Pomerode","13302Ponte Alta","13351Ponte Alta Do Norte","13401Ponte Serrada","13500Porto Belo","13609Porto União","13708Pouso Redondo","13807Praia Grande","13906Presidente Castello Branco","14003Presidente Getúlio","14102Presidente Nereu","14151Princesa","14201Quilombo","14300Rancho Queimado","14409Rio Das Antas","14508Rio Do Campo","14607Rio Do Oeste","14706Rio Dos Cedros","14805Rio Do Sul","14904Rio Fortuna","15000Rio Negrinho","15059Rio Rufino","15075Riqueza","15109Rodeio","15208Romelândia","15307Salete","15356Saltinho","15406Salto Veloso","15455Sangão","15505Santa Cecília","15554Santa Helena","15604Santa Rosa De Lima","15653Santa Rosa Do Sul","15679Santa Terezinha","15687Santa Terezinha Do Progresso","15695Santiago Do Sul","15703Santo Amaro Da Imperatriz","15752São Bernardino","15802São Bento Do Sul","15901São Bonifácio","16008São Carlos","16057São Cristovão Do Sul","16107São Domingos","16206São Francisco Do Sul","16255São João Do Oeste","16305São João Batista","16354São João Do Itaperiú","16404São João Do Sul","16503São Joaquim","16602São José","16701São José Do Cedro","16800São José Do Cerrito","16909São Lourenço Do Oeste","17006São Ludgero","17105São Martinho","17154São Miguel Da Boa Vista","17204São Miguel Do Oeste","17253São Pedro De Alcântara","17303Saudades","17402Schroeder","17501Seara","17550Serra Alta","17600Siderópolis","17709Sombrio","17758Sul Brasil","17808Taió","17907Tangará","17956Tigrinhos","18004Tijucas","18103Timbé Do Sul","18202Timbó","18251Timbó Grande","18301Três Barras","18350Treviso","18400Treze De Maio","18509Treze Tílias","18608Trombudo Central","18707Tubarão","18756Tunápolis","18806Turvo","18855União Do Oeste","18905Urubici","18954Urupema","19002Urussanga","19101Vargeão","19150Vargem","19176Vargem Bonita","19200Vidal Ramos","19309Videira","19358Vitor Meireles","19408Witmarsum","19507Xanxerê","19606Xavantina","19705Xaxim","19853Zortéa"],"RO":["00015Alta Floresta D'Oeste","00023Ariquemes","00031Cabixi","00049Cacoal","00056Cerejeiras","00064Colorado Do Oeste","00072Corumbiara","00080Costa Marques","00098Espigão D'Oeste","00106Guajará-Mirim","00114Jaru","00122Ji-Paraná","00130Machadinho D'Oeste","00148Nova Brasilândia D'Oeste","00155Ouro Preto Do Oeste","00189Pimenta Bueno","00205Porto Velho","00254Presidente Médici","00262Rio Crespo","00288Rolim De Moura","00296Santa Luzia D'Oeste","00304Vilhena","00320São Miguel Do Guaporé","00338Nova Mamoré","00346Alvorada D'Oeste","00379Alto Alegre Dos Parecis","00403Alto Paraíso","00452Buritis","00502Novo Horizonte Do Oeste","00601Cacaulândia","00700Campo Novo De Rondônia","00809Candeias Do Jamari","00908Castanheiras","00924Chupinguaia","00940Cujubim","01005Governador Jorge Teixeira","01104Itapuã Do Oeste","01203Ministro Andreazza","01302Mirante Da Serra","01401Monte Negro","01435Nova União","01450Parecis","01468Pimenteiras Do Oeste","01476Primavera De Rondônia","01484São Felipe D'Oeste","01492São Francisco Do Guaporé","01500Seringueiras","01559Teixeirópolis","01609Theobroma","01708Urupá","01757Vale Do Anari","01807Vale Do Paraíso"],"CE":["00101Abaiara","00150Acarape","00200Acaraú","00309Acopiara","00408Aiuaba","00507Alcântaras","00606Altaneira","00705Alto Santo","00754Amontada","00804Antonina Do Norte","00903Apuiarés","01000Aquiraz","01109Aracati","01208Aracoiaba","01257Ararendá","01307Araripe","01406Aratuba","01505Arneiroz","01604Assaré","01703Aurora","01802Baixio","01851Banabuiú","01901Barbalha","01950Barreira","02008Barro","02057Barroquinha","02107Baturité","02206Beberibe","02305Bela Cruz","02404Boa Viagem","02503Brejo Santo","02602Camocim","02701Campos Sales","02800Canindé","02909Capistrano","03006Caridade","03105Cariré","03204Caririaçu","03303Cariús","03402Carnaubal","03501Cascavel","03600Catarina","03659Catunda","03709Caucaia","03808Cedro","03907Chaval","03931Choró","03956Chorozinho","04004Coreaú","04103Crateús","04202Crato","04236Croatá","04251Cruz","04269Deputado Irapuan Pinheiro","04277Ererê","04285Eusébio","04301Farias Brito","04350Forquilha","04400Fortaleza","04459Fortim","04509Frecheirinha","04608General Sampaio","04657Graça","04707Granja","04806Granjeiro","04905Groaíras","04954Guaiúba","05001Guaraciaba Do Norte","05100Guaramiranga","05209Hidrolândia","05233Horizonte","05266Ibaretama","05308Ibiapina","05332Ibicuitinga","05357Icapuí","05407Icó","05506Iguatu","05605Independência","05654Ipaporanga","05704Ipaumirim","05803Ipu","05902Ipueiras","06009Iracema","06108Irauçuba","06207Itaiçaba","06256Itaitinga","06306Itapagé","06405Itapipoca","06504Itapiúna","06553Itarema","06603Itatira","06702Jaguaretama","06801Jaguaribara","06900Jaguaribe","07007Jaguaruana","07106Jardim","07205Jati","07254Jijoca De Jericoacoara","07304Juazeiro Do Norte","07403Jucás","07502Lavras Da Mangabeira","07601Limoeiro Do Norte","07635Madalena","07650Maracanaú","07700Maranguape","07809Marco","07908Martinópole","08005Massapê","08104Mauriti","08203Meruoca","08302Milagres","08351Milhã","08377Miraíma","08401Missão Velha","08500Mombaça","08609Monsenhor Tabosa","08708Morada Nova","08807Moraújo","08906Morrinhos","09003Mucambo","09102Mulungu","09201Nova Olinda","09300Nova Russas","09409Novo Oriente","09458Ocara","09508Orós","09607Pacajus","09706Pacatuba","09805Pacoti","09904Pacujá","10001Palhano","10100Palmácia","10209Paracuru","10258Paraipaba","10308Parambu","10407Paramoti","10506Pedra Branca","10605Penaforte","10704Pentecoste","10803Pereiro","10852Pindoretama","10902Piquet Carneiro","10951Pires Ferreira","11009Poranga","11108Porteiras","11207Potengi","11231Potiretama","11264Quiterianópolis","11306Quixadá","11355Quixelô","11405Quixeramobim","11504Quixeré","11603Redenção","11702Reriutaba","11801Russas","11900Saboeiro","11959Salitre","12007Santana Do Acaraú","12106Santana Do Cariri","12205Santa Quitéria","12304São Benedito","12403São Gonçalo Do Amarante","12502São João Do Jaguaribe","12601São Luís Do Curu","12700Senador Pompeu","12809Senador Sá","12908Sobral","13005Solonópole","13104Tabuleiro Do Norte","13203Tamboril","13252Tarrafas","13302Tauá","13351Tejuçuoca","13401Tianguá","13500Trairi","13559Tururu","13609Ubajara","13708Umari","13757Umirim","13807Uruburetama","13906Uruoca","13955Varjota","14003Várzea Alegre","14102Viçosa Do Ceará"],"MT":["00102Acorizal","00201Água Boa","00250Alta Floresta","00300Alto Araguaia","00359Alto Boa Vista","00409Alto Garças","00508Alto Paraguai","00607Alto Taquari","00805Apiacás","01001Araguaiana","01209Araguainha","01258Araputanga","01308Arenápolis","01407Aripuanã","01605Barão De Melgaço","01704Barra Do Bugres","01803Barra Do Garças","01852Bom Jesus Do Araguaia","01902Brasnorte","02504Cáceres","02603Campinápolis","02637Campo Novo Do Parecis","02678Campo Verde","02686Campos De Júlio","02694Canabrava Do Norte","02702Canarana","02793Carlinda","02850Castanheira","03007Chapada Dos Guimarães","03056Cláudia","03106Cocalinho","03205Colíder","03254Colniza","03304Comodoro","03353Confresa","03361Conquista D'Oeste","03379Cotriguaçu","03403Cuiabá","03437Curvelândia","03452Denise","03502Diamantino","03601Dom Aquino","03700Feliz Natal","03809Figueirópolis D'Oeste","03858Gaúcha Do Norte","03908General Carneiro","03957Glória D'Oeste","04104Guarantã Do Norte","04203Guiratinga","04500Indiavaí","04526Ipiranga Do Norte","04542Itanhangá","04559Itaúba","04609Itiquira","04807Jaciara","04906Jangada","05002Jauru","05101Juara","05150Juína","05176Juruena","05200Juscimeira","05234Lambari D'Oeste","05259Lucas Do Rio Verde","05309Luciara","05507Vila Bela Da Santíssima Trindade","05580Marcelândia","05606Matupá","05622Mirassol D'Oeste","05903Nobres","06000Nortelândia","06109Nossa Senhora Do Livramento","06158Nova Bandeirantes","06174Nova Nazaré","06182Nova Lacerda","06190Nova Santa Helena","06208Nova Brasilândia","06216Nova Canaã Do Norte","06224Nova Mutum","06232Nova Olímpia","06240Nova Ubiratã","06257Nova Xavantina","06265Novo Mundo","06273Novo Horizonte Do Norte","06281Novo São Joaquim","06299Paranaíta","06307Paranatinga","06315Novo Santo Antônio","06372Pedra Preta","06422Peixoto De Azevedo","06455Planalto Da Serra","06505Poconé","06653Pontal Do Araguaia","06703Ponte Branca","06752Pontes E Lacerda","06778Porto Alegre Do Norte","06802Porto Dos Gaúchos","06828Porto Esperidião","06851Porto Estrela","07008Poxoréo","07040Primavera Do Leste","07065Querência","07107São José Dos Quatro Marcos","07156Reserva Do Cabaçal","07180Ribeirão Cascalheira","07198Ribeirãozinho","07206Rio Branco","07248Santa Carmem","07263Santo Afonso","07297São José Do Povo","07305São José Do Rio Claro","07354São José Do Xingu","07404São Pedro Da Cipa","07578Rondolândia","07602Rondonópolis","07701Rosário Oeste","07743Santa Cruz Do Xingu","07750Salto Do Céu","07768Santa Rita Do Trivelato","07776Santa Terezinha","07792Santo Antônio Do Leste","07800Santo Antônio Do Leverger","07859São Félix Do Araguaia","07875Sapezal","07883Serra Nova Dourada","07909Sinop","07925Sorriso","07941Tabaporã","07958Tangará Da Serra","08006Tapurah","08055Terra Nova Do Norte","08105Tesouro","08204Torixoréu","08303União Do Sul","08352Vale De São Domingos","08402Várzea Grande","08501Vera","08600Vila Rica","08808Nova Guarita","08857Nova Marilândia","08907Nova Maringá","08956Nova Monte Verde"],"ES":["00102Afonso Cláudio","00136Águia Branca","00169Água Doce Do Norte","00201Alegre","00300Alfredo Chaves","00359Alto Rio Novo","00409Anchieta","00508Apiacá","00607Aracruz","00706Atilio Vivacqua","00805Baixo Guandu","00904Barra De São Francisco","01001Boa Esperança","01100Bom Jesus Do Norte","01159Brejetuba","01209Cachoeiro De Itapemirim","01308Cariacica","01407Castelo","01506Colatina","01605Conceição Da Barra","01704Conceição Do Castelo","01803Divino De São Lourenço","01902Domingos Martins","02009Dores Do Rio Preto","02108Ecoporanga","02207Fundão","02256Governador Lindenberg","02306Guaçuí","02405Guarapari","02454Ibatiba","02504Ibiraçu","02553Ibitirama","02603Iconha","02652Irupi","02702Itaguaçu","02801Itapemirim","02900Itarana","03007Iúna","03056Jaguaré","03106Jerônimo Monteiro","03130João Neiva","03163Laranja Da Terra","03205Linhares","03304Mantenópolis","03320Marataízes","03346Marechal Floriano","03353Marilândia","03403Mimoso Do Sul","03502Montanha","03601Mucurici","03700Muniz Freire","03809Muqui","03908Nova Venécia","04005Pancas","04054Pedro Canário","04104Pinheiros","04203Piúma","04252Ponto Belo","04302Presidente Kennedy","04351Rio Bananal","04401Rio Novo Do Sul","04500Santa Leopoldina","04559Santa Maria De Jetibá","04609Santa Teresa","04658São Domingos Do Norte","04708São Gabriel Da Palha","04807São José Do Calçado","04906São Mateus","04955São Roque Do Canaã","05002Serra","05010Sooretama","05036Vargem Alta","05069Venda Nova Do Imigrante","05101Viana","05150Vila Pavão","05176Vila Valério","05200Vila Velha","05309Vitória"],"PR":["00103Abatiá","00202Adrianópolis","00301Agudos Do Sul","00400Almirante Tamandaré","00459Altamira Do Paraná","00509Altônia","00608Alto Paraná","00707Alto Piquiri","00806Alvorada Do Sul","00905Amaporã","01002Ampére","01051Anahy","01101Andirá","01150Ângulo","01200Antonina","01309Antônio Olinto","01408Apucarana","01507Arapongas","01606Arapoti","01655Arapuã","01705Araruna","01804Araucária","01853Ariranha Do Ivaí","01903Assaí","02000Assis Chateaubriand","02109Astorga","02208Atalaia","02307Balsa Nova","02406Bandeirantes","02505Barbosa Ferraz","02604Barracão","02703Barra Do Jacaré","02752Bela Vista Da Caroba","02802Bela Vista Do Paraíso","02901Bituruna","03008Boa Esperança","03024Boa Esperança Do Iguaçu","03040Boa Ventura De São Roque","03057Boa Vista Da Aparecida","03107Bocaiúva Do Sul","03156Bom Jesus Do Sul","03206Bom Sucesso","03222Bom Sucesso Do Sul","03305Borrazópolis","03354Braganey","03370Brasilândia Do Sul","03404Cafeara","03453Cafelândia","03479Cafezal Do Sul","03503Califórnia","03602Cambará","03701Cambé","03800Cambira","03909Campina Da Lagoa","03958Campina Do Simão","04006Campina Grande Do Sul","04055Campo Bonito","04105Campo Do Tenente","04204Campo Largo","04253Campo Magro","04303Campo Mourão","04402Cândido De Abreu","04428Candói","04451Cantagalo","04501Capanema","04600Capitão Leônidas Marques","04659Carambeí","04709Carlópolis","04808Cascavel","04907Castro","05003Catanduvas","05102Centenário Do Sul","05201Cerro Azul","05300Céu Azul","05409Chopinzinho","05508Cianorte","05607Cidade Gaúcha","05706Clevelândia","05805Colombo","05904Colorado","06001Congonhinhas","06100Conselheiro Mairinck","06209Contenda","06308Corbélia","06407Cornélio Procópio","06456Coronel Domingos Soares","06506Coronel Vivida","06555Corumbataí Do Sul","06571Cruzeiro Do Iguaçu","06605Cruzeiro Do Oeste","06704Cruzeiro Do Sul","06803Cruz Machado","06852Cruzmaltina","06902Curitiba","07009Curiúva","07108Diamante Do Norte","07124Diamante Do Sul","07157Diamante D'Oeste","07207Dois Vizinhos","07256Douradina","07306Doutor Camargo","07405Enéas Marques","07504Engenheiro Beltrão","07520Esperança Nova","07538Entre Rios Do Oeste","07546Espigão Alto Do Iguaçu","07553Farol","07603Faxinal","07652Fazenda Rio Grande","07702Fênix","07736Fernandes Pinheiro","07751Figueira","07801Floraí","07850Flor Da Serra Do Sul","07900Floresta","08007Florestópolis","08106Flórida","08205Formosa Do Oeste","08304Foz Do Iguaçu","08320Francisco Alves","08403Francisco Beltrão","08452Foz Do Jordão","08502General Carneiro","08551Godoy Moreira","08601Goioerê","08650Goioxim","08700Grandes Rios","08809Guaíra","08908Guairaçá","08957Guamiranga","09005Guapirama","09104Guaporema","09203Guaraci","09302Guaraniaçu","09401Guarapuava","09500Guaraqueçaba","09609Guaratuba","09658Honório Serpa","09708Ibaiti","09757Ibema","09807Ibiporã","09906Icaraíma","10003Iguaraçu","10052Iguatu","10078Imbaú","10102Imbituva","10201Inácio Martins","10300Inajá","10409Indianópolis","10508Ipiranga","10607Iporã","10656Iracema Do Oeste","10706Irati","10805Iretama","10904Itaguajé","10953Itaipulândia","11001Itambaracá","11100Itambé","11209Itapejara D'Oeste","11258Itaperuçu","11308Itaúna Do Sul","11407Ivaí","11506Ivaiporã","11555Ivaté","11605Ivatuba","11704Jaboti","11803Jacarezinho","11902Jaguapitã","12009Jaguariaíva","12108Jandaia Do Sul","12207Janiópolis","12306Japira","12405Japurá","12504Jardim Alegre","12603Jardim Olinda","12702Jataizinho","12751Jesuítas","12801Joaquim Távora","12900Jundiaí Do Sul","12959Juranda","13007Jussara","13106Kaloré","13205Lapa","13254Laranjal","13304Laranjeiras Do Sul","13403Leópolis","13429Lidianópolis","13452Lindoeste","13502Loanda","13601Lobato","13700Londrina","13734Luiziana","13759Lunardelli","13809Lupionópolis","13908Mallet","14005Mamborê","14104Mandaguaçu","14203Mandaguari","14302Mandirituba","14351Manfrinópolis","14401Mangueirinha","14500Manoel Ribas","14609Marechal Cândido Rondon","14708Maria Helena","14807Marialva","14906Marilândia Do Sul","15002Marilena","15101Mariluz","15200Maringá","15309Mariópolis","15358Maripá","15408Marmeleiro","15457Marquinho","15507Marumbi","15606Matelândia","15705Matinhos","15739Mato Rico","15754Mauá Da Serra","15804Medianeira","15853Mercedes","15903Mirador","16000Miraselva","16059Missal","16109Moreira Sales","16208Morretes","16307Munhoz De Melo","16406Nossa Senhora Das Graças","16505Nova Aliança Do Ivaí","16604Nova América Da Colina","16703Nova Aurora","16802Nova Cantu","16901Nova Esperança","16950Nova Esperança Do Sudoeste","17008Nova Fátima","17057Nova Laranjeiras","17107Nova Londrina","17206Nova Olímpia","17214Nova Santa Bárbara","17222Nova Santa Rosa","17255Nova Prata Do Iguaçu","17271Nova Tebas","17297Novo Itacolomi","17305Ortigueira","17404Ourizona","17453Ouro Verde Do Oeste","17503Paiçandu","17602Palmas","17701Palmeira","17800Palmital","17909Palotina","18006Paraíso Do Norte","18105Paranacity","18204Paranaguá","18303Paranapoema","18402Paranavaí","18451Pato Bragado","18501Pato Branco","18600Paula Freitas","18709Paulo Frontin","18808Peabiru","18857Perobal","18907Pérola","19004Pérola D'Oeste","19103Piên","19152Pinhais","19202Pinhalão","19251Pinhal De São Bento","19301Pinhão","19400Piraí Do Sul","19509Piraquara","19608Pitanga","19657Pitangueiras","19707Planaltina Do Paraná","19806Planalto","19905Ponta Grossa","19954Pontal Do Paraná","20002Porecatu","20101Porto Amazonas","20150Porto Barreiro","20200Porto Rico","20309Porto Vitória","20333Prado Ferreira","20358Pranchita","20408Presidente Castelo Branco","20507Primeiro De Maio","20606Prudentópolis","20655Quarto Centenário","20705Quatiguá","20804Quatro Barras","20853Quatro Pontes","20903Quedas Do Iguaçu","21000Querência Do Norte","21109Quinta Do Sol","21208Quitandinha","21257Ramilândia","21307Rancho Alegre","21356Rancho Alegre D'Oeste","21406Realeza","21505Rebouças","21604Renascença","21703Reserva","21752Reserva Do Iguaçu","21802Ribeirão Claro","21901Ribeirão Do Pinhal","22008Rio Azul","22107Rio Bom","22156Rio Bonito Do Iguaçu","22172Rio Branco Do Ivaí","22206Rio Branco Do Sul","22305Rio Negro","22404Rolândia","22503Roncador","22602Rondon","22651Rosário Do Ivaí","22701Sabáudia","22800Salgado Filho","22909Salto Do Itararé","23006Salto Do Lontra","23105Santa Amélia","23204Santa Cecília Do Pavão","23303Santa Cruz De Monte Castelo","23402Santa Fé","23501Santa Helena","23600Santa Inês","23709Santa Isabel Do Ivaí","23808Santa Izabel Do Oeste","23824Santa Lúcia","23857Santa Maria Do Oeste","23907Santa Mariana","23956Santa Mônica","24004Santana Do Itararé","24020Santa Tereza Do Oeste","24053Santa Terezinha De Itaipu","24103Santo Antônio Da Platina","24202Santo Antônio Do Caiuá","24301Santo Antônio Do Paraíso","24400Santo Antônio Do Sudoeste","24509Santo Inácio","24608São Carlos Do Ivaí","24707São Jerônimo Da Serra","24806São João","24905São João Do Caiuá","25001São João Do Ivaí","25100São João Do Triunfo","25209São Jorge D'Oeste","25308São Jorge Do Ivaí","25357São Jorge Do Patrocínio","25407São José Da Boa Vista","25456São José Das Palmeiras","25506São José Dos Pinhais","25555São Manoel Do Paraná","25605São Mateus Do Sul","25704São Miguel Do Iguaçu","25753São Pedro Do Iguaçu","25803São Pedro Do Ivaí","25902São Pedro Do Paraná","26009São Sebastião Da Amoreira","26108São Tomé","26207Sapopema","26256Sarandi","26272Saudade Do Iguaçu","26306Sengés","26355Serranópolis Do Iguaçu","26405Sertaneja","26504Sertanópolis","26603Siqueira Campos","26652Sulina","26678Tamarana","26702Tamboara","26801Tapejara","26900Tapira","27007Teixeira Soares","27106Telêmaco Borba","27205Terra Boa","27304Terra Rica","27403Terra Roxa","27502Tibagi","27601Tijucas Do Sul","27700Toledo","27809Tomazina","27858Três Barras Do Paraná","27882Tunas Do Paraná","27908Tuneiras Do Oeste","27957Tupãssi","27965Turvo","28005Ubiratã","28104Umuarama","28203União Da Vitória","28302Uniflor","28401Uraí","28500Wenceslau Braz","28534Ventania","28559Vera Cruz Do Oeste","28609Verê","28625Alto Paraíso","28633Doutor Ulysses","28658Virmond","28708Vitorino","28807Xambrê"],"PI":["00053Acauã","00103Agricolândia","00202Água Branca","00251Alagoinha Do Piauí","00277Alegrete Do Piauí","00301Alto Longá","00400Altos","00459Alvorada Do Gurguéia","00509Amarante","00608Angical Do Piauí","00707Anísio De Abreu","00806Antônio Almeida","00905Aroazes","00954Aroeiras Do Itaim","01002Arraial","01051Assunção Do Piauí","01101Avelino Lopes","01150Baixa Grande Do Ribeiro","01176Barra D'Alcântara","01200Barras","01309Barreiras Do Piauí","01408Barro Duro","01507Batalha","01556Bela Vista Do Piauí","01572Belém Do Piauí","01606Beneditinos","01705Bertolínia","01739Betânia Do Piauí","01770Boa Hora","01804Bocaina","01903Bom Jesus","01919Bom Princípio Do Piauí","01929Bonfim Do Piauí","01945Boqueirão Do Piauí","01960Brasileira","01988Brejo Do Piauí","02000Buriti Dos Lopes","02026Buriti Dos Montes","02059Cabeceiras Do Piauí","02075Cajazeiras Do Piauí","02083Cajueiro Da Praia","02091Caldeirão Grande Do Piauí","02109Campinas Do Piauí","02117Campo Alegre Do Fidalgo","02133Campo Grande Do Piauí","02174Campo Largo Do Piauí","02208Campo Maior","02251Canavieira","02307Canto Do Buriti","02406Capitão De Campos","02455Capitão Gervásio Oliveira","02505Caracol","02539Caraúbas Do Piauí","02554Caridade Do Piauí","02604Castelo Do Piauí","02653Caxingó","02703Cocal","02711Cocal De Telha","02729Cocal Dos Alves","02737Coivaras","02752Colônia Do Gurguéia","02778Colônia Do Piauí","02802Conceição Do Canindé","02851Coronel José Dias","02901Corrente","03008Cristalândia Do Piauí","03107Cristino Castro","03206Curimatá","03230Currais","03255Curralinhos","03271Curral Novo Do Piauí","03305Demerval Lobão","03354Dirceu Arcoverde","03404Dom Expedito Lopes","03420Domingos Mourão","03453Dom Inocêncio","03503Elesbão Veloso","03602Eliseu Martins","03701Esperantina","03750Fartura Do Piauí","03800Flores Do Piauí","03859Floresta Do Piauí","03909Floriano","04006Francinópolis","04105Francisco Ayres","04154Francisco Macedo","04204Francisco Santos","04303Fronteiras","04352Geminiano","04402Gilbués","04501Guadalupe","04550Guaribas","04600Hugo Napoleão","04659Ilha Grande","04709Inhuma","04808Ipiranga Do Piauí","04907Isaías Coelho","05003Itainópolis","05102Itaueira","05151Jacobina Do Piauí","05201Jaicós","05250Jardim Do Mulato","05276Jatobá Do Piauí","05300Jerumenha","05359João Costa","05409Joaquim Pires","05458Joca Marques","05508José De Freitas","05516Juazeiro Do Piauí","05524Júlio Borges","05532Jurema","05540Lagoinha Do Piauí","05557Lagoa Alegre","05565Lagoa Do Barro Do Piauí","05573Lagoa De São Francisco","05581Lagoa Do Piauí","05599Lagoa Do Sítio","05607Landri Sales","05706Luís Correia","05805Luzilândia","05854Madeiro","05904Manoel Emídio","05953Marcolândia","06001Marcos Parente","06050Massapê Do Piauí","06100Matias Olímpio","06209Miguel Alves","06308Miguel Leão","06357Milton Brandão","06407Monsenhor Gil","06506Monsenhor Hipólito","06605Monte Alegre Do Piauí","06654Morro Cabeça No Tempo","06670Morro Do Chapéu Do Piauí","06696Murici Dos Portelas","06704Nazaré Do Piauí","06720Nazária","06753Nossa Senhora De Nazaré","06803Nossa Senhora Dos Remédios","06902Novo Oriente Do Piauí","06951Novo Santo Antônio","07009Oeiras","07108Olho D'Água Do Piauí","07207Padre Marcos","07306Paes Landim","07355Pajeú Do Piauí","07405Palmeira Do Piauí","07504Palmeirais","07553Paquetá","07603Parnaguá","07702Parnaíba","07751Passagem Franca Do Piauí","07777Patos Do Piauí","07793Pau D'Arco Do Piauí","07801Paulistana","07850Pavussu","07900Pedro Ii","07934Pedro Laurentino","07959Nova Santa Rita","08007Picos","08106Pimenteiras","08205Pio Ix","08304Piracuruca","08403Piripiri","08502Porto","08551Porto Alegre Do Piauí","08601Prata Do Piauí","08650Queimada Nova","08700Redenção Do Gurguéia","08809Regeneração","08858Riacho Frio","08874Ribeira Do Piauí","08908Ribeiro Gonçalves","09005Rio Grande Do Piauí","09104Santa Cruz Do Piauí","09153Santa Cruz Dos Milagres","09203Santa Filomena","09302Santa Luz","09351Santana Do Piauí","09377Santa Rosa Do Piauí","09401Santo Antônio De Lisboa","09450Santo Antônio Dos Milagres","09500Santo Inácio Do Piauí","09559São Braz Do Piauí","09609São Félix Do Piauí","09658São Francisco De Assis Do Piauí","09708São Francisco Do Piauí","09757São Gonçalo Do Gurguéia","09807São Gonçalo Do Piauí","09856São João Da Canabrava","09872São João Da Fronteira","09906São João Da Serra","09955São João Da Varjota","09971São João Do Arraial","10003São João Do Piauí","10052São José Do Divino","10102São José Do Peixe","10201São José Do Piauí","10300São Julião","10359São Lourenço Do Piauí","10375São Luis Do Piauí","10383São Miguel Da Baixa Grande","10391São Miguel Do Fidalgo","10409São Miguel Do Tapuio","10508São Pedro Do Piauí","10607São Raimundo Nonato","10623Sebastião Barros","10631Sebastião Leal","10656Sigefredo Pacheco","10706Simões","10805Simplício Mendes","10904Socorro Do Piauí","10938Sussuapara","10953Tamboril Do Piauí","10979Tanque Do Piauí","11001Teresina","11100União","11209Uruçuí","11308Valença Do Piauí","11357Várzea Branca","11407Várzea Grande","11506Vera Mendes","11605Vila Nova Do Piauí","11704Wall Ferraz"],"RJ":["00100Angra Dos Reis","00159Aperibé","00209Araruama","00225Areal","00233Armação Dos Búzios","00258Arraial Do Cabo","00308Barra Do Piraí","00407Barra Mansa","00456Belford Roxo","00506Bom Jardim","00605Bom Jesus Do Itabapoana","00704Cabo Frio","00803Cachoeiras De Macacu","00902Cambuci","00936Carapebus","00951Comendador Levy Gasparian","01009Campos Dos Goytacazes","01108Cantagalo","01157Cardoso Moreira","01207Carmo","01306Casimiro De Abreu","01405Conceição De Macabu","01504Cordeiro","01603Duas Barras","01702Duque De Caxias","01801Engenheiro Paulo De Frontin","01850Guapimirim","01876Iguaba Grande","01900Itaboraí","02007Itaguaí","02056Italva","02106Itaocara","02205Itaperuna","02254Itatiaia","02270Japeri","02304Laje Do Muriaé","02403Macaé","02452Macuco","02502Magé","02601Mangaratiba","02700Maricá","02809Mendes","02858Mesquita","02908Miguel Pereira","03005Miracema","03104Natividade","03203Nilópolis","03302Niterói","03401Nova Friburgo","03500Nova Iguaçu","03609Paracambi","03708Paraíba Do Sul","03807Paraty","03856Paty Do Alferes","03906Petrópolis","03955Pinheiral","04003Piraí","04102Porciúncula","04110Porto Real","04128Quatis","04144Queimados","04151Quissamã","04201Resende","04300Rio Bonito","04409Rio Claro","04508Rio Das Flores","04524Rio Das Ostras","04557Rio De Janeiro","04607Santa Maria Madalena","04706Santo Antônio De Pádua","04755São Francisco De Itabapoana","04805São Fidélis","04904São Gonçalo","05000São João Da Barra","05109São João De Meriti","05133São José De Ubá","05158São José Do Vale Do Rio Preto","05208São Pedro Da Aldeia","05307São Sebastião Do Alto","05406Sapucaia","05505Saquarema","05554Seropédica","05604Silva Jardim","05703Sumidouro","05752Tanguá","05802Teresópolis","05901Trajano De Moraes","06008Três Rios","06107Valença","06156Varre-Sai","06206Vassouras","06305Volta Redonda"],"RS":["00034Aceguá","00059Água Santa","00109Agudo","00208Ajuricaba","00307Alecrim","00406Alegrete","00455Alegria","00471Almirante Tamandaré Do Sul","00505Alpestre","00554Alto Alegre","00570Alto Feliz","00604Alvorada","00638Amaral Ferrador","00646Ametista Do Sul","00661André Da Rocha","00703Anta Gorda","00802Antônio Prado","00851Arambaré","00877Araricá","00901Aratiba","01008Arroio Do Meio","01057Arroio Do Sal","01073Arroio Do Padre","01107Arroio Dos Ratos","01206Arroio Do Tigre","01305Arroio Grande","01404Arvorezinha","01503Augusto Pestana","01552Áurea","01602Bagé","01636Balneário Pinhal","01651Barão","01701Barão De Cotegipe","01750Barão Do Triunfo","01800Barracão","01859Barra Do Guarita","01875Barra Do Quaraí","01909Barra Do Ribeiro","01925Barra Do Rio Azul","01958Barra Funda","02006Barros Cassal","02055Benjamin Constant Do Sul","02105Bento Gonçalves","02154Boa Vista Das Missões","02204Boa Vista Do Buricá","02220Boa Vista Do Cadeado","02238Boa Vista Do Incra","02253Boa Vista Do Sul","02303Bom Jesus","02352Bom Princípio","02378Bom Progresso","02402Bom Retiro Do Sul","02451Boqueirão Do Leão","02501Bossoroca","02584Bozano","02600Braga","02659Brochier","02709Butiá","02808Caçapava Do Sul","02907Cacequi","03004Cachoeira Do Sul","03103Cachoeirinha","03202Cacique Doble","03301Caibaté","03400Caiçara","03509Camaquã","03558Camargo","03608Cambará Do Sul","03673Campestre Da Serra","03707Campina Das Missões","03806Campinas Do Sul","03905Campo Bom","04002Campo Novo","04101Campos Borges","04200Candelária","04309Cândido Godói","04358Candiota","04408Canela","04507Canguçu","04606Canoas","04614Canudos Do Vale","04622Capão Bonito Do Sul","04630Capão Da Canoa","04655Capão Do Cipó","04663Capão Do Leão","04671Capivari Do Sul","04689Capela De Santana","04697Capitão","04705Carazinho","04713Caraá","04804Carlos Barbosa","04853Carlos Gomes","04903Casca","04952Caseiros","05009Catuípe","05108Caxias Do Sul","05116Centenário","05124Cerrito","05132Cerro Branco","05157Cerro Grande","05173Cerro Grande Do Sul","05207Cerro Largo","05306Chapada","05355Charqueadas","05371Charrua","05405Chiapetta","05439Chuí","05447Chuvisca","05454Cidreira","05504Ciríaco","05587Colinas","05603Colorado","05702Condor","05801Constantina","05835Coqueiro Baixo","05850Coqueiros Do Sul","05871Coronel Barros","05900Coronel Bicaco","05934Coronel Pilar","05959Cotiporã","05975Coxilha","06007Crissiumal","06056Cristal","06072Cristal Do Sul","06106Cruz Alta","06130Cruzaltense","06205Cruzeiro Do Sul","06304David Canabarro","06320Derrubadas","06353Dezesseis De Novembro","06379Dilermando De Aguiar","06403Dois Irmãos","06429Dois Irmãos Das Missões","06452Dois Lajeados","06502Dom Feliciano","06551Dom Pedro De Alcântara","06601Dom Pedrito","06700Dona Francisca","06734Doutor Maurício Cardoso","06759Doutor Ricardo","06767Eldorado Do Sul","06809Encantado","06908Encruzilhada Do Sul","06924Engenho Velho","06932Entre-Ijuís","06957Entre Rios Do Sul","06973Erebango","07005Erechim","07054Ernestina","07104Herval","07203Erval Grande","07302Erval Seco","07401Esmeralda","07450Esperança Do Sul","07500Espumoso","07559Estação","07609Estância Velha","07708Esteio","07807Estrela","07815Estrela Velha","07831Eugênio De Castro","07864Fagundes Varela","07906Farroupilha","08003Faxinal Do Soturno","08052Faxinalzinho","08078Fazenda Vilanova","08102Feliz","08201Flores Da Cunha","08250Floriano Peixoto","08300Fontoura Xavier","08409Formigueiro","08433Forquetinha","08458Fortaleza Dos Valos","08508Frederico Westphalen","08607Garibaldi","08656Garruchos","08706Gaurama","08805General Câmara","08854Gentil","08904Getúlio Vargas","09001Giruá","09050Glorinha","09100Gramado","09126Gramado Dos Loureiros","09159Gramado Xavier","09209Gravataí","09258Guabiju","09308Guaíba","09407Guaporé","09506Guarani Das Missões","09555Harmonia","09571Herveiras","09605Horizontina","09654Hulha Negra","09704Humaitá","09753Ibarama","09803Ibiaçá","09902Ibiraiaras","09951Ibirapuitã","10009Ibirubá","10108Igrejinha","10207Ijuí","10306Ilópolis","10330Imbé","10363Imigrante","10405Independência","10413Inhacorá","10439Ipê","10462Ipiranga Do Sul","10504Iraí","10538Itaara","10553Itacurubi","10579Itapuca","10603Itaqui","10652Itati","10702Itatiba Do Sul","10751Ivorá","10801Ivoti","10850Jaboticaba","10876Jacuizinho","10900Jacutinga","11007Jaguarão","11106Jaguari","11122Jaquirana","11130Jari","11155Jóia","11205Júlio De Castilhos","11239Lagoa Bonita Do Sul","11254Lagoão","11270Lagoa Dos Três Cantos","11304Lagoa Vermelha","11403Lajeado","11429Lajeado Do Bugre","11502Lavras Do Sul","11601Liberato Salzano","11627Lindolfo Collor","11643Linha Nova","11700Machadinho","11718Maçambará","11734Mampituba","11759Manoel Viana","11775Maquiné","11791Maratá","11809Marau","11908Marcelino Ramos","11981Mariana Pimentel","12005Mariano Moro","12054Marques De Souza","12104Mata","12138Mato Castelhano","12153Mato Leitão","12179Mato Queimado","12203Maximiliano De Almeida","12252Minas Do Leão","12302Miraguaí","12351Montauri","12377Monte Alegre Dos Campos","12385Monte Belo Do Sul","12401Montenegro","12427Mormaço","12443Morrinhos Do Sul","12450Morro Redondo","12476Morro Reuter","12500Mostardas","12609Muçum","12617Muitos Capões","12625Muliterno","12658Não-Me-Toque","12674Nicolau Vergueiro","12708Nonoai","12757Nova Alvorada","12807Nova Araçá","12906Nova Bassano","12955Nova Boa Vista","13003Nova Bréscia","13011Nova Candelária","13037Nova Esperança Do Sul","13060Nova Hartz","13086Nova Pádua","13102Nova Palma","13201Nova Petrópolis","13300Nova Prata","13334Nova Ramada","13359Nova Roma Do Sul","13375Nova Santa Rita","13391Novo Cabrais","13409Novo Hamburgo","13425Novo Machado","13441Novo Tiradentes","13466Novo Xingu","13490Novo Barreiro","13508Osório","13607Paim Filho","13656Palmares Do Sul","13706Palmeira Das Missões","13805Palmitinho","13904Panambi","13953Pantano Grande","14001Paraí","14027Paraíso Do Sul","14035Pareci Novo","14050Parobé","14068Passa Sete","14076Passo Do Sobrado","14100Passo Fundo","14134Paulo Bento","14159Paverama","14175Pedras Altas","14209Pedro Osório","14308Pejuçara","14407Pelotas","14423Picada Café","14456Pinhal","14464Pinhal Da Serra","14472Pinhal Grande","14498Pinheirinho Do Vale","14506Pinheiro Machado","14555Pirapó","14605Piratini","14704Planalto","14753Poço Das Antas","14779Pontão","14787Ponte Preta","14803Portão","14902Porto Alegre","15008Porto Lucena","15057Porto Mauá","15073Porto Vera Cruz","15107Porto Xavier","15131Pouso Novo","15149Presidente Lucena","15156Progresso","15172Protásio Alves","15206Putinga","15305Quaraí","15313Quatro Irmãos","15321Quevedos","15354Quinze De Novembro","15404Redentora","15453Relvado","15503Restinga Seca","15552Rio Dos Índios","15602Rio Grande","15701Rio Pardo","15750Riozinho","15800Roca Sales","15909Rodeio Bonito","15958Rolador","16006Rolante","16105Ronda Alta","16204Rondinha","16303Roque Gonzales","16402Rosário Do Sul","16428Sagrada Família","16436Saldanha Marinho","16451Salto Do Jacuí","16477Salvador Das Missões","16501Salvador Do Sul","16600Sananduva","16709Santa Bárbara Do Sul","16733Santa Cecília Do Sul","16758Santa Clara Do Sul","16808Santa Cruz Do Sul","16907Santa Maria","16956Santa Maria Do Herval","16972Santa Margarida Do Sul","17004Santana Da Boa Vista","17103Sant'Ana Do Livramento","17202Santa Rosa","17251Santa Tereza","17301Santa Vitória Do Palmar","17400Santiago","17509Santo Ângelo","17558Santo Antônio Do Palma","17608Santo Antônio Da Patrulha","17707Santo Antônio Das Missões","17756Santo Antônio Do Planalto","17806Santo Augusto","17905Santo Cristo","17954Santo Expedito Do Sul","18002São Borja","18051São Domingos Do Sul","18101São Francisco De Assis","18200São Francisco De Paula","18309São Gabriel","18408São Jerônimo","18424São João Da Urtiga","18432São João Do Polêsine","18440São Jorge","18457São José Das Missões","18465São José Do Herval","18481São José Do Hortêncio","18499São José Do Inhacorá","18507São José Do Norte","18606São José Do Ouro","18614São José Do Sul","18622São José Dos Ausentes","18705São Leopoldo","18804São Lourenço Do Sul","18903São Luiz Gonzaga","19000São Marcos","19109São Martinho","19125São Martinho Da Serra","19158São Miguel Das Missões","19208São Nicolau","19307São Paulo Das Missões","19356São Pedro Da Serra","19364São Pedro Das Missões","19372São Pedro Do Butiá","19406São Pedro Do Sul","19505São Sebastião Do Caí","19604São Sepé","19703São Valentim","19711São Valentim Do Sul","19737São Valério Do Sul","19752São Vendelino","19802São Vicente Do Sul","19901Sapiranga","20008Sapucaia Do Sul","20107Sarandi","20206Seberi","20230Sede Nova","20263Segredo","20305Selbach","20321Senador Salgado Filho","20354Sentinela Do Sul","20404Serafina Corrêa","20453Sério","20503Sertão","20552Sertão Santana","20578Sete De Setembro","20602Severiano De Almeida","20651Silveira Martins","20677Sinimbu","20701Sobradinho","20800Soledade","20859Tabaí","20909Tapejara","21006Tapera","21105Tapes","21204Taquara","21303Taquari","21329Taquaruçu Do Sul","21352Tavares","21402Tenente Portela","21436Terra De Areia","21451Teutônia","21469Tio Hugo","21477Tiradentes Do Sul","21493Toropi","21501Torres","21600Tramandaí","21626Travesseiro","21634Três Arroios","21667Três Cachoeiras","21709Três Coroas","21808Três De Maio","21832Três Forquilhas","21857Três Palmeiras","21907Três Passos","21956Trindade Do Sul","22004Triunfo","22103Tucunduva","22152Tunas","22186Tupanci Do Sul","22202Tupanciretã","22251Tupandi","22301Tuparendi","22327Turuçu","22343Ubiretama","22350União Da Serra","22376Unistalda","22400Uruguaiana","22509Vacaria","22525Vale Verde","22533Vale Do Sol","22541Vale Real","22558Vanini","22608Venâncio Aires","22707Vera Cruz","22806Veranópolis","22855Vespasiano Correa","22905Viadutos","23002Viamão","23101Vicente Dutra","23200Victor Graeff","23309Vila Flores","23358Vila Lângaro","23408Vila Maria","23457Vila Nova Do Sul","23507Vista Alegre","23606Vista Alegre Do Prata","23705Vista Gaúcha","23754Vitória Das Missões","23770Westfalia","23804Xangri-Lá"],"PA":["00107Abaetetuba","00131Abel Figueiredo","00206Acará","00305Afuá","00347Água Azul Do Norte","00404Alenquer","00503Almeirim","00602Altamira","00701Anajás","00800Ananindeua","00859Anapu","00909Augusto Corrêa","00958Aurora Do Pará","01006Aveiro","01105Bagre","01204Baião","01253Bannach","01303Barcarena","01402Belém","01451Belterra","01501Benevides","01576Bom Jesus Do Tocantins","01600Bonito","01709Bragança","01725Brasil Novo","01758Brejo Grande Do Araguaia","01782Breu Branco","01808Breves","01907Bujaru","01956Cachoeira Do Piriá","02004Cachoeira Do Arari","02103Cametá","02152Canaã Dos Carajás","02202Capanema","02301Capitão Poço","02400Castanhal","02509Chaves","02608Colares","02707Conceição Do Araguaia","02756Concórdia Do Pará","02764Cumaru Do Norte","02772Curionópolis","02806Curralinho","02855Curuá","02905Curuçá","02939Dom Eliseu","02954Eldorado Dos Carajás","03002Faro","03044Floresta Do Araguaia","03077Garrafão Do Norte","03093Goianésia Do Pará","03101Gurupá","03200Igarapé-Açu","03309Igarapé-Miri","03408Inhangapi","03457Ipixuna Do Pará","03507Irituia","03606Itaituba","03705Itupiranga","03754Jacareacanga","03804Jacundá","03903Juruti","04000Limoeiro Do Ajuru","04059Mãe Do Rio","04109Magalhães Barata","04208Marabá","04307Maracanã","04406Marapanim","04422Marituba","04455Medicilândia","04505Melgaço","04604Mocajuba","04703Moju","04802Monte Alegre","04901Muaná","04950Nova Esperança Do Piriá","04976Nova Ipixuna","05007Nova Timboteua","05031Novo Progresso","05064Novo Repartimento","05106Óbidos","05205Oeiras Do Pará","05304Oriximiná","05403Ourém","05437Ourilândia Do Norte","05486Pacajá","05494Palestina Do Pará","05502Paragominas","05536Parauapebas","05551Pau D'Arco","05601Peixe-Boi","05635Piçarra","05650Placas","05700Ponta De Pedras","05809Portel","05908Porto De Moz","06005Prainha","06104Primavera","06112Quatipuru","06138Redenção","06161Rio Maria","06187Rondon Do Pará","06195Rurópolis","06203Salinópolis","06302Salvaterra","06351Santa Bárbara Do Pará","06401Santa Cruz Do Arari","06500Santa Isabel Do Pará","06559Santa Luzia Do Pará","06583Santa Maria Das Barreiras","06609Santa Maria Do Pará","06708Santana Do Araguaia","06807Santarém","06906Santarém Novo","07003Santo Antônio Do Tauá","07102São Caetano De Odivelas","07151São Domingos Do Araguaia","07201São Domingos Do Capim","07300São Félix Do Xingu","07409São Francisco Do Pará","07458São Geraldo Do Araguaia","07466São João Da Ponta","07474São João De Pirabas","07508São João Do Araguaia","07607São Miguel Do Guamá","07706São Sebastião Da Boa Vista","07755Sapucaia","07805Senador José Porfírio","07904Soure","07953Tailândia","07961Terra Alta","07979Terra Santa","08001Tomé-Açu","08035Tracuateua","08050Trairão","08084Tucumã","08100Tucuruí","08126Ulianópolis","08159Uruará","08209Vigia","08308Viseu","08357Vitória Do Xingu","08407Xinguara"],"MA":["00055Açailândia","00105Afonso Cunha","00154Água Doce Do Maranhão","00204Alcântara","00303Aldeias Altas","00402Altamira Do Maranhão","00436Alto Alegre Do Maranhão","00477Alto Alegre Do Pindaré","00501Alto Parnaíba","00550Amapá Do Maranhão","00600Amarante Do Maranhão","00709Anajatuba","00808Anapurus","00832Apicum-Açu","00873Araguanã","00907Araioses","00956Arame","01004Arari","01103Axixá","01202Bacabal","01251Bacabeira","01301Bacuri","01350Bacurituba","01400Balsas","01509Barão De Grajaú","01608Barra Do Corda","01707Barreirinhas","01731Belágua","01772Bela Vista Do Maranhão","01806Benedito Leite","01905Bequimão","01939Bernardo Do Mearim","01970Boa Vista Do Gurupi","02002Bom Jardim","02036Bom Jesus Das Selvas","02077Bom Lugar","02101Brejo","02150Brejo De Areia","02200Buriti","02309Buriti Bravo","02325Buriticupu","02358Buritirana","02374Cachoeira Grande","02408Cajapió","02507Cajari","02556Campestre Do Maranhão","02606Cândido Mendes","02705Cantanhede","02754Capinzal Do Norte","02804Carolina","02903Carutapera","03000Caxias","03109Cedral","03125Central Do Maranhão","03158Centro Do Guilherme","03174Centro Novo Do Maranhão","03208Chapadinha","03257Cidelândia","03307Codó","03406Coelho Neto","03505Colinas","03554Conceição Do Lago-Açu","03604Coroatá","03703Cururupu","03752Davinópolis","03802Dom Pedro","03901Duque Bacelar","04008Esperantinópolis","04057Estreito","04073Feira Nova Do Maranhão","04081Fernando Falcão","04099Formosa Da Serra Negra","04107Fortaleza Dos Nogueiras","04206Fortuna","04305Godofredo Viana","04404Gonçalves Dias","04503Governador Archer","04552Governador Edison Lobão","04602Governador Eugênio Barros","04628Governador Luiz Rocha","04651Governador Newton Bello","04677Governador Nunes Freire","04701Graça Aranha","04800Grajaú","04909Guimarães","05005Humberto De Campos","05104Icatu","05153Igarapé Do Meio","05203Igarapé Grande","05302Imperatriz","05351Itaipava Do Grajaú","05401Itapecuru Mirim","05427Itinga Do Maranhão","05450Jatobá","05476Jenipapo Dos Vieiras","05500João Lisboa","05609Joselândia","05658Junco Do Maranhão","05708Lago Da Pedra","05807Lago Do Junco","05906Lago Verde","05922Lagoa Do Mato","05948Lago Dos Rodrigues","05963Lagoa Grande Do Maranhão","05989Lajeado Novo","06003Lima Campos","06102Loreto","06201Luís Domingues","06300Magalhães De Almeida","06326Maracaçumé","06359Marajá Do Sena","06375Maranhãozinho","06409Mata Roma","06508Matinha","06607Matões","06631Matões Do Norte","06672Milagres Do Maranhão","06706Mirador","06755Miranda Do Norte","06805Mirinzal","06904Monção","07001Montes Altos","07100Morros","07209Nina Rodrigues","07258Nova Colinas","07308Nova Iorque","07357Nova Olinda Do Maranhão","07407Olho D'Água Das Cunhãs","07456Olinda Nova Do Maranhão","07506Paço Do Lumiar","07605Palmeirândia","07704Paraibano","07803Parnarama","07902Passagem Franca","08009Pastos Bons","08058Paulino Neves","08108Paulo Ramos","08207Pedreiras","08256Pedro Do Rosário","08306Penalva","08405Peri Mirim","08454Peritoró","08504Pindaré-Mirim","08603Pinheiro","08702Pio Xii","08801Pirapemas","08900Poção De Pedras","09007Porto Franco","09056Porto Rico Do Maranhão","09106Presidente Dutra","09205Presidente Juscelino","09239Presidente Médici","09270Presidente Sarney","09304Presidente Vargas","09403Primeira Cruz","09452Raposa","09502Riachão","09551Ribamar Fiquene","09601Rosário","09700Sambaíba","09759Santa Filomena Do Maranhão","09809Santa Helena","09908Santa Inês","10005Santa Luzia","10039Santa Luzia Do Paruá","10104Santa Quitéria Do Maranhão","10203Santa Rita","10237Santana Do Maranhão","10278Santo Amaro Do Maranhão","10302Santo Antônio Dos Lopes","10401São Benedito Do Rio Preto","10500São Bento","10609São Bernardo","10658São Domingos Do Azeitão","10708São Domingos Do Maranhão","10807São Félix De Balsas","10856São Francisco Do Brejão","10906São Francisco Do Maranhão","11003São João Batista","11029São João Do Carú","11052São João Do Paraíso","11078São João Do Soter","11102São João Dos Patos","11201São José De Ribamar","11250São José Dos Basílios","11300São Luís","11409São Luís Gonzaga Do Maranhão","11508São Mateus Do Maranhão","11532São Pedro Da Água Branca","11573São Pedro Dos Crentes","11607São Raimundo Das Mangabeiras","11631São Raimundo Do Doca Bezerra","11672São Roberto","11706São Vicente Ferrer","11722Satubinha","11748Senador Alexandre Costa","11763Senador La Rocque","11789Serrano Do Maranhão","11805Sítio Novo","11904Sucupira Do Norte","11953Sucupira Do Riachão","12001Tasso Fragoso","12100Timbiras","12209Timon","12233Trizidela Do Vale","12274Tufilândia","12308Tuntum","12407Turiaçu","12456Turilândia","12506Tutóia","12605Urbano Santos","12704Vargem Grande","12803Viana","12852Vila Nova Dos Martírios","12902Vitória Do Mearim","13009Vitorino Freire","14007Zé Doca"]};
+
+// A lista só é expandida quando alguém abre a tela: 5.565 objetos custam
+// caro para montar em celular, e a maioria das sessões nunca chega aqui.
+var MUNICIPIOS = null;
+function municipios(){
+  if(MUNICIPIOS) return MUNICIPIOS;
+  MUNICIPIOS = [];
+  Object.keys(MUNICIPIOS_RAW).forEach(function(uf){
+    var pre = COD_UF[uf];
+    MUNICIPIOS_RAW[uf].forEach(function(linha){
+      var nome = linha.slice(5);
+      MUNICIPIOS.push({cod: pre + linha.slice(0,5), nome: nome, uf: uf, busca: normalizar(nome)});
+    });
+  });
+  return MUNICIPIOS;
+}
+function municipioPorCodigo(cod){
+  var l = municipios();
+  for(var i=0;i<l.length;i++) if(l[i].cod === cod) return l[i];
+  return null;
+}
+// casa uma cidade da planilha da rede com o município oficial
+function acharMunicipio(nome, uf){
+  var alvo = normalizar(nome||"").trim();
+  if(!alvo) return null;
+  var l = municipios();
+  for(var i=0;i<l.length;i++){
+    if(l[i].busca === alvo && (!uf || l[i].uf === uf)) return l[i];
+  }
+  return null;
+}
+function buscarMunicipios(termo, limite){
+  var q = normalizar(termo||"").trim();
+  if(q.length < 2) return [];
+  var l = municipios(), comeca = [], contem = [];
+  for(var i=0;i<l.length && comeca.length + contem.length < 200;i++){
+    var p = l[i].busca.indexOf(q);
+    if(p === 0) comeca.push(l[i]);
+    else if(p > 0) contem.push(l[i]);
+  }
+  // quem já tem franquia sobe: é a praça sobre a qual temos algo a dizer
+  function peso(m){ return franquiasDaCidade(m).length ? 0 : 1; }
+  return comeca.concat(contem)
+    .sort(function(a,b){ return peso(a)-peso(b) || a.nome.localeCompare(b.nome); })
+    .slice(0, limite || 8);
+}
+
+/* ---------------------------------------------------------------------
+   CAMADA 1 — o que a nossa rede prova naquela praça
+   --------------------------------------------------------------------- */
+function franquiasDaCidade(m){
+  if(!m) return [];
+  return FRANQUIAS().filter(function(f){
+    return f.uf === m.uf && normalizar(f.cidade||"") === m.busca;
+  });
+}
+
+// A sede distorce a leitura: Umuarama tem produtos-piloto em proporção que
+// não se repete em lugar nenhum. Praças marcadas como sede saem da base de
+// comparação para não virarem recomendação errada.
+function ehSede(m){
+  return (db.get("geoConfig").sedes || []).indexOf(m.cod) > -1;
+}
+
+function mixNacional(){
+  var cont = {}, total = 0;
+  FRANQUIAS().forEach(function(f){
+    if(f.situacao === "Inativo") return;
+    total++;
+    (f.negocios||[]).forEach(function(n){ cont[normalizar(n)] = (cont[normalizar(n)]||0)+1; });
+  });
+  return {cont: cont, total: total};
+}
+
+// O mix daquela cidade contra a média do país. Só vira sinal quando há
+// base suficiente — com 2 franquias, qualquer porcentagem é ruído.
+function mixDaPraca(m){
+  var locais = franquiasDaCidade(m).filter(function(f){ return f.situacao !== "Inativo"; });
+  var nac = mixNacional();
+  if(locais.length < 3 || !nac.total) return {suficiente:false, n:locais.length, itens:[]};
+  var cont = {}, rotulo = {};
+  locais.forEach(function(f){
+    (f.negocios||[]).forEach(function(n){
+      var k = normalizar(n);
+      cont[k] = (cont[k]||0)+1;
+      if(!rotulo[k]) rotulo[k] = n;
+    });
+  });
+  var itens = Object.keys(cont).map(function(k){
+    var aqui = cont[k]/locais.length;
+    var brasil = (nac.cont[k]||0)/nac.total;
+    return {
+      chave: k, nome: rotulo[k], qtd: cont[k],
+      pctAqui: Math.round(aqui*100),
+      pctBrasil: Math.round(brasil*100),
+      dif: brasil > 0 ? Math.round((aqui/brasil - 1)*100) : null
+    };
+  }).sort(function(a,b){ return b.qtd - a.qtd; });
+  return {suficiente:true, n:locais.length, itens:itens};
+}
+
+function posicaoNoRanking(m){
+  var cont = {};
+  FRANQUIAS().forEach(function(f){
+    var k = f.uf + "|" + normalizar(f.cidade||"");
+    cont[k] = (cont[k]||0)+1;
+  });
+  var lista = Object.keys(cont).map(function(k){ return {k:k, n:cont[k]}; })
+    .sort(function(a,b){ return b.n - a.n; });
+  var alvo = m.uf + "|" + m.busca;
+  for(var i=0;i<lista.length;i++) if(lista[i].k === alvo) return {pos:i+1, de:lista.length};
+  return null;
+}
+
+/* ---------------------------------------------------------------------
+   CAMADA 2 — indicadores importados
+   --------------------------------------------------------------------- */
+function INDICADORES(){ return db.get("indicadores"); }
+function geoConfig(){ return db.get("geoConfig"); }
+
+// O que o IBGE devolveu ao vivo fica só neste navegador — ver
+// IBGE_CACHE lá embaixo. É consulta, não conteúdo da empresa: se cada
+// vendedor gravasse no banco a coleção inteira ao abrir uma cidade, um
+// sobrescreveria o outro, e o RLS recusaria a escrita de quem não é
+// administrador. O dado importado sempre vence o dado ao vivo.
+function indicadoresDe(m){
+  var base = INDICADORES();
+  var salvo = (base.porMunicipio && base.porMunicipio[m.cod]) || {};
+  var vivo = ibgeCache()[m.cod];
+  if(!vivo || !vivo.valores) return salvo;
+  var out = {};
+  for(var k in vivo.valores) if(salvo[k] == null || salvo[k] === "") out[k] = vivo.valores[k];
+  for(var j in salvo) out[j] = salvo[j];
+  return out;
+}
+
+// Os campos que a tabela de procedência precisa descrever: os importados
+// mais os que só existem porque o IBGE respondeu agora.
+function camposDaCidade(m){
+  var campos = (INDICADORES().campos || []).slice();
+  var vivo = ibgeCache()[m.cod];
+  ((vivo && vivo.campos) || []).forEach(function(c){
+    if(!campos.some(function(x){ return x.id === c.id; })) campos.push(c);
+  });
+  return campos;
+}
+function campoIndicador(id){
+  var campos = INDICADORES().campos || [];
+  for(var i=0;i<campos.length;i++) if(campos[i].id === id) return campos[i];
+  return null;
+}
+function fmtNum(v){
+  if(v == null || v === "") return "—";
+  var n = Number(v);
+  if(!isFinite(n)) return String(v);
+  return n.toLocaleString("pt-BR", {maximumFractionDigits: n < 10 ? 1 : 0});
+}
+
+// Estimativas derivadas. Sempre rotuladas como estimativa, com a conta à
+// mostra: não existe contagem oficial de pets por município, e fingir que
+// existe seria dar ao vendedor um número que ele não pode defender.
+function estimativas(m, ind){
+  var cfg = geoConfig(), out = [];
+  var pop = Number(ind.populacao);
+  if(isFinite(pop) && pop > 0){
+    if(cfg.taxaPet > 0){
+      out.push({
+        id:"pets", nome:"Pets (estimativa)",
+        valor: Math.round(pop * cfg.taxaPet),
+        conta: "população × " + cfg.taxaPet + " pet por habitante",
+        fonte: cfg.fontePet || "estimativa de mercado"
+      });
+    }
+    if(cfg.taxaIdoso > 0 && ind.idosos == null){
+      out.push({
+        id:"idosos", nome:"População 60+ (estimativa)",
+        valor: Math.round(pop * cfg.taxaIdoso),
+        conta: "população × " + Math.round(cfg.taxaIdoso*100) + "%",
+        fonte: cfg.fonteIdoso || "média nacional"
+      });
+    }
+  }
+  return out;
+}
+
+/* ---------------------------------------------------------------------
+   O MOTOR DE ADERÊNCIA
+
+   Cada regra olha um sinal e, quando ele existe, recomenda segmentos com
+   o motivo escrito. Regra sem dado simplesmente não dispara — nada de
+   inventar aderência a partir de campo vazio.
+
+   A força é deliberadamente grosseira (alta / média): o dado não sustenta
+   precisão maior, e um número falsamente preciso convida o vendedor a
+   prometer o que não pode.
+   --------------------------------------------------------------------- */
+var REGRAS_GEO = [
+  {
+    id:"frota",
+    quando: function(c){ return c.ind.frota > 0 && c.pop > 0; },
+    avaliar: function(c){
+      var porMil = c.ind.frota / c.pop * 1000;
+      if(porMil < 250) return null;
+      return {
+        forca: porMil >= 500 ? "alta" : "média",
+        titulo: "Frota grande para o tamanho da cidade",
+        evidencia: fmtNum(c.ind.frota) + " veículos — " + Math.round(porMil) +
+                   " por mil habitantes" + (porMil >= 500 ? ", acima da média do país" : ""),
+        ramos: ["seguros"],
+        chaves: ["auto","moto","veic","rastr"],
+        fala: "Só de frota, " + c.m.nome + " tem cerca de " + fmtNum(c.ind.frota) +
+              " veículos. Seguro auto e moto é onde a maioria dos nossos franqueados começa, porque a necessidade já existe e é renovada todo ano."
+      };
+    }
+  },
+  {
+    id:"idosos",
+    quando: function(c){ return c.idosos > 0 && c.pop > 0; },
+    avaliar: function(c){
+      var pct = c.idosos / c.pop;
+      if(pct < 0.12) return null;
+      return {
+        forca: pct >= 0.18 ? "alta" : "média",
+        titulo: "População madura acima da média",
+        evidencia: Math.round(pct*100) + "% da cidade tem 60 anos ou mais (" + fmtNum(c.idosos) + " pessoas)",
+        ramos: ["saude","seguros"],
+        chaves: ["saude","vida","odont","telemedicina","funeral"],
+        fala: "Cerca de " + Math.round(pct*100) + "% de " + c.m.nome +
+              " tem 60 anos ou mais. Saúde, telemedicina e vida têm procura natural aí — e são produtos de renovação, não de venda única."
+      };
+    }
+  },
+  {
+    id:"pets",
+    quando: function(c){ return c.pets > 0; },
+    avaliar: function(c){
+      return {
+        forca: "média",
+        titulo: "Base de pets relevante",
+        evidencia: "cerca de " + fmtNum(c.pets) + " animais (estimativa sobre a população)",
+        ramos: ["saude","diversos"],
+        chaves: ["pet"],
+        fala: "Pela população, " + c.m.nome + " deve ter perto de " + fmtNum(c.pets) +
+              " pets. Plano pet é entrada fácil: ticket baixo, decisão rápida e abre a conversa para os outros produtos."
+      };
+    }
+  },
+  {
+    id:"porte-grande",
+    quando: function(c){ return c.pop >= 200000; },
+    avaliar: function(c){
+      return {
+        forca: c.pop >= 500000 ? "alta" : "média",
+        titulo: "Cidade grande, com base empresarial",
+        evidencia: fmtNum(c.pop) + " habitantes",
+        ramos: ["pagamentos","financeiro","seguros"],
+        chaves: ["empres","pj","maquin","cartao","capital","credito"],
+        fala: "Com " + fmtNum(c.pop) + " habitantes, " + c.m.nome +
+              " tem volume de comércio e serviço para sustentar a linha empresarial — maquininha, seguro empresarial e capital de giro."
+      };
+    }
+  },
+  {
+    id:"porte-pequeno",
+    quando: function(c){ return c.pop > 0 && c.pop < 50000; },
+    avaliar: function(c){
+      return {
+        forca: "média",
+        titulo: "Praça pequena, relacionamento vale mais que ponto",
+        evidencia: fmtNum(c.pop) + " habitantes",
+        ramos: [],
+        chaves: [],
+        modalidade: "Home Office",
+        fala: "Em cidade de " + fmtNum(c.pop) + " habitantes, quem vende é o relacionamento, não a vitrine. " +
+              "Home office costuma fazer mais sentido que loja — e o investimento inicial cai."
+      };
+    }
+  },
+  {
+    id:"rede-vazia",
+    quando: function(c){ return c.naCidade === 0; },
+    avaliar: function(c){
+      var noEstado = c.noEstado;
+      return {
+        forca: "alta",
+        titulo: "Praça ainda sem franqueado",
+        evidencia: noEstado > 0
+          ? "nenhuma franquia em " + c.m.nome + ", mas " + noEstado + " em " + c.m.uf
+          : "nenhuma franquia em " + c.m.uf + " ainda",
+        ramos: [],
+        chaves: [],
+        fala: "Hoje não temos ninguém em " + c.m.nome + "." +
+              (noEstado > 0 ? " Em " + c.m.uf + " são " + noEstado + " franqueados, então o modelo já está rodando no estado — ele entraria como o primeiro da cidade, sem disputar carteira com ninguém da rede." : "")
+      };
+    }
+  },
+  {
+    id:"rede-provada",
+    quando: function(c){ return c.naCidade >= 3; },
+    avaliar: function(c){
+      return {
+        forca: "alta",
+        titulo: "Praça já provada pela rede",
+        evidencia: c.naCidade + " franquias ativas em " + c.m.nome +
+                   (c.rank ? " — " + c.rank.pos + "ª maior praça do país" : ""),
+        ramos: [],
+        chaves: [],
+        fala: "Já temos " + c.naCidade + " franqueados em " + c.m.nome +
+              ". Ele não vai ser cobaia: o modelo já foi testado nessa cidade, e dá para conversar com quem está lá."
+      };
+    }
+  }
+];
+
+function analisarPraca(m){
+  var ind = indicadoresDe(m);
+  var est = estimativas(m, ind);
+  function daEstimativa(id){
+    for(var i=0;i<est.length;i++) if(est[i].id === id) return est[i].valor;
+    return 0;
+  }
+  var naCidade = franquiasDaCidade(m).filter(function(f){ return f.situacao !== "Inativo"; }).length;
+  var noEstado = FRANQUIAS().filter(function(f){ return f.uf === m.uf && f.situacao !== "Inativo"; }).length;
+  var ctx = {
+    m: m, ind: ind,
+    pop: Number(ind.populacao) || 0,
+    idosos: Number(ind.idosos) || daEstimativa("idosos"),
+    pets: daEstimativa("pets"),
+    naCidade: naCidade, noEstado: noEstado,
+    rank: posicaoNoRanking(m),
+    mix: mixDaPraca(m),
+    estimativas: est
+  };
+
+  var sinais = [];
+  REGRAS_GEO.forEach(function(r){
+    try{
+      if(!r.quando(ctx)) return;
+      var s = r.avaliar(ctx);
+      if(s){ s.id = r.id; sinais.push(s); }
+    }catch(e){}
+  });
+  ctx.sinais = sinais.sort(function(a,b){ return (a.forca==="alta"?0:1) - (b.forca==="alta"?0:1); });
+  ctx.produtos = produtosSugeridos(ctx);
+  return ctx;
+}
+
+// Traduz os sinais em subsegmentos concretos da tabela de comissões, para
+// o vendedor sair com o nome do produto e a comissão, não com uma
+// categoria abstrata.
+function produtosSugeridos(ctx){
+  var pontos = {};
+  ctx.sinais.forEach(function(s){
+    (s.ramos||[]).forEach(function(rid){
+      produtosDoRamo(rid).forEach(function(p){
+        var casa = !(s.chaves||[]).length || (s.chaves||[]).some(function(k){
+          return normalizar(p.p).indexOf(k) > -1;
+        });
+        if(!casa) return;
+        var reg = pontos[p.chave] || (pontos[p.chave] = {prod:p, peso:0, porques:[]});
+        reg.peso += (s.forca === "alta" ? 2 : 1);
+        if(reg.porques.indexOf(s.titulo) < 0) reg.porques.push(s.titulo);
+      });
+    });
+  });
+  // o mix real da praça pesa mais que qualquer inferência
+  if(ctx.mix.suficiente){
+    ctx.mix.itens.forEach(function(it){
+      if(it.dif == null || it.dif < 25) return;
+      RAMOS().forEach(function(r){
+        produtosDoRamo(r.id).forEach(function(p){
+          if(normalizar(p.p).indexOf(it.chave.split(" ")[0]) < 0 &&
+             normalizar(r.nome).indexOf(it.chave.split(" ")[0]) < 0) return;
+          var reg = pontos[p.chave] || (pontos[p.chave] = {prod:p, peso:0, porques:[]});
+          reg.peso += 3;
+          var por = "Vende acima da média nesta praça";
+          if(reg.porques.indexOf(por) < 0) reg.porques.push(por);
+        });
+      });
+    });
+  }
+  return Object.keys(pontos).map(function(k){ return pontos[k]; })
+    .sort(function(a,b){ return b.peso - a.peso; })
+    .slice(0, 8);
+}
+
+/* ---------------------------------------------------------------------
+   A TELA
+   --------------------------------------------------------------------- */
+function renderGeo(){
+  var m = ui.geoCidade ? municipioPorCodigo(ui.geoCidade) : null;
+  var h = '<div class="topline"><div><div class="eyebrow">Geomarketing</div>'+
+    '<h1 class="page-title">Raio-X da cidade</h1>'+
+    '<p class="page-sub">Digite a cidade do candidato. O que aparece são <b>sinais para a conversa</b> — o que a rede já prova naquela praça e o que os dados públicos dizem do lugar. Não é previsão de resultado.</p></div>'+
+    '<div class="row"><button class="btn" data-action="ir" data-view="adm" data-aba="geo" data-admin="1">'+
+      ico("chave",15)+"Indicadores</button></div></div>";
+
+  h += '<div class="geo-busca"><label class="field">Cidade do candidato'+
+    '<input type="text" id="geoInput" value="'+esc(ui.geoTermo||"")+'" autocomplete="off" '+
+    'placeholder="comece a digitar: Curitiba, Sinop, Petrolina…" data-action-input="geo-busca"></label>'+
+    listaSugestoesGeo()+"</div>";
+
+  if(!m){
+    h += '<div class="empty" style="margin-top:22px;">'+
+      "Escolha uma cidade para ver o raio-X.<br>"+
+      '<span class="faint">Os 5.565 municípios do país estão aqui, sem precisar de internet.</span></div>';
+    document.getElementById("appMain").innerHTML = h;
+    focarGeo();
+    return;
+  }
+
+  var a = analisarPraca(m);
+  h += painelGeo(a);
+  document.getElementById("appMain").innerHTML = h;
+  focarGeo();
+}
+
+function focarGeo(){
+  var el = document.getElementById("geoInput");
+  if(el && ui.geoFoco){ el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+  ui.geoFoco = false;
+}
+
+function listaSugestoesGeo(){
+  var res = buscarMunicipios(ui.geoTermo, 8);
+  if(!res.length) return "";
+  return '<div class="geo-sug">'+res.map(function(m){
+    var n = franquiasDaCidade(m).length;
+    return '<button class="geo-sug-item" data-action="geo-cidade" data-c="'+m.cod+'">'+
+      '<span>'+esc(m.nome)+' <span class="faint">'+m.uf+"</span></span>"+
+      (n? '<span class="pill pill-accent">'+n+(n===1?" franquia":" franquias")+"</span>"
+        : '<span class="faint">sem franquia</span>')+"</button>";
+  }).join("")+"</div>";
+}
+
+function painelGeo(a){
+  var m = a.m;
+  var h = '<div class="topline" style="margin-top:26px;margin-bottom:16px;"><div>'+
+    '<h2 style="font-size:23px;margin:0;">'+esc(m.nome)+' <span class="faint" style="font-size:16px;">'+m.uf+"</span></h2>"+
+    '<p class="faint" style="margin:4px 0 0;">código IBGE '+m.cod+
+      (ehSede(m)? ' · <span class="pill pill-warning">praça-sede</span>' : "")+"</p></div>"+
+    '<button class="btn btn-sm" data-action="copiar-geo" data-c="'+m.cod+'">'+ico("balao",14)+"Copiar resumo</button></div>";
+
+  if(ehSede(m)){
+    h += callout("warn","aviso","Esta é uma <b>praça-sede</b>: o mix de produtos daqui não representa o comportamento normal de mercado, porque concentra pilotos e operação própria. Use os números com essa ressalva.");
+  }
+
+  // ---- números de cabeçalho
+  var ind = a.ind;
+  var cartoes = [];
+  cartoes.push(kpi(a.naCidade, "Franquias aqui", "loja"));
+  if(a.pop) cartoes.push(kpi(fmtNum(a.pop), "Habitantes", "usuario"));
+  if(a.pop && a.naCidade) cartoes.push(kpi(fmtNum(Math.round(a.pop/a.naCidade)), "Hab. por franquia", "escala"));
+  cartoes.push(kpi(a.noEstado, "Franquias em "+m.uf, "grade"));
+  h += '<div class="section"><div class="grid grid-stats">'+cartoes.join("")+"</div></div>";
+
+  // ---- sinais
+  h += '<div class="section"><div class="section-head"><h2>'+ico("alvo",17)+"Sinais desta praça</h2></div>";
+  if(!a.sinais.length){
+    h += '<div class="empty">Ainda não há dados suficientes sobre '+esc(m.nome)+'.'+
+      (ehAdmin()? '<br><button class="btn btn-sm btn-primary" data-action="ir" data-view="adm" data-aba="geo">Importar indicadores</button>':"")+"</div>";
+  } else {
+    h += '<div class="grid grid-2">'+a.sinais.map(function(s){
+      return '<div class="sinal sinal-'+s.forca+'">'+
+        '<div class="row-between" style="gap:10px;align-items:flex-start;">'+
+          '<div class="sinal-tit">'+esc(s.titulo)+"</div>"+
+          '<span class="pill '+(s.forca==="alta"?"pill-success":"pill-info")+'">'+s.forca+"</span></div>"+
+        '<p class="sinal-ev">'+esc(s.evidencia)+"</p>"+
+        '<div class="script-block" style="margin:10px 0 8px;font-size:13.3px;">'+esc(s.fala)+"</div>"+
+        copiaBtn(s.fala,"Copiar")+"</div>";
+    }).join("")+"</div>";
+  }
+  h += "</div>";
+
+  // ---- o mix que funciona ali
+  if(a.mix.suficiente){
+    h += '<div class="section"><div class="section-head"><h2>'+ico("escala",17)+"O que vende nesta praça</h2>"+
+      '<span class="faint">'+a.mix.n+" franquias ativas</span></div>"+
+      '<div class="card"><p class="muted" style="margin:0 0 12px;font-size:13.5px;">Comparado com a média da rede no país. É a evidência mais forte que temos: comportamento real de quem já opera aí.</p>'+
+      '<div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Negócio</th>'+
+      '<th style="text-align:right;">Aqui</th><th style="text-align:right;">Brasil</th><th style="text-align:right;">Diferença</th></tr></thead><tbody>'+
+      a.mix.itens.map(function(it){
+        var cor = it.dif == null ? "" : it.dif >= 25 ? "var(--success)" : it.dif <= -25 ? "var(--danger)" : "var(--ink-faint)";
+        return "<tr><td>"+esc(it.nome)+' <span class="faint">'+it.qtd+" de "+a.mix.n+"</span></td>"+
+          '<td class="num" style="color:var(--ink);">'+it.pctAqui+"%</td>"+
+          '<td class="num" style="color:var(--ink-faint);">'+it.pctBrasil+"%</td>"+
+          '<td class="num" style="color:'+cor+';">'+(it.dif==null?"—":(it.dif>0?"+":"")+it.dif+"%")+"</td></tr>";
+      }).join("")+"</tbody></table></div></div></div>";
+  } else if(a.naCidade > 0){
+    h += '<div class="section">'+callout("info","aviso","Só "+a.naCidade+" franquia"+(a.naCidade===1?"":"s")+" em "+esc(m.nome)+". Pouco para comparar mix — com essa base, qualquer porcentagem é ruído.")+"</div>";
+  }
+
+  // ---- produtos
+  if(a.produtos.length){
+    h += '<div class="section"><div class="section-head"><h2>'+ico("dinheiro",17)+"Produtos com maior aderência</h2></div>"+
+      '<div class="stack">'+a.produtos.map(function(x){
+        var r = ramoById(x.prod.ramoId);
+        return '<button class="prod-aderencia" data-action="abrir-produto" data-k="'+esc(x.prod.chave)+'">'+
+          '<span class="seg-ico">'+ico(x.prod.icone || (r? r.icone : "grade"),16)+"</span>"+
+          '<span class="pa-main"><span class="pa-nome">'+esc(x.prod.p)+"</span>"+
+          '<span class="pa-por">'+esc(x.porques.join(" · "))+"</span></span>"+
+          comBadge(x.prod.c)+"</button>";
+      }).join("")+"</div></div>";
+  }
+
+  // ---- indicadores crus, com procedência
+  var linhas = [];
+  camposDaCidade(m).forEach(function(c){
+    if(ind[c.id] == null || ind[c.id] === "") return;
+    linhas.push({nome:c.nome, valor:fmtNum(ind[c.id]), fonte:c.fonte, data:c.data});
+  });
+  a.estimativas.forEach(function(e){
+    linhas.push({nome:e.nome, valor:fmtNum(e.valor), fonte:e.fonte, data:"", conta:e.conta});
+  });
+  h += '<div class="section"><div class="section-head"><h2>'+ico("livro",17)+"Números e procedência</h2></div>";
+  h += linhas.length
+    ? '<div class="card"><div style="overflow-x:auto;"><table class="tbl"><thead><tr><th>Indicador</th>'+
+      '<th style="text-align:right;">Valor</th><th>Fonte</th></tr></thead><tbody>'+
+      linhas.map(function(l){
+        return "<tr><td>"+esc(l.nome)+(l.conta? '<br><span class="faint">'+esc(l.conta)+"</span>":"")+"</td>"+
+          '<td class="num" style="color:var(--ink);">'+l.valor+"</td>"+
+          '<td><span class="faint">'+esc(l.fonte||"não informada")+(l.data? " · "+esc(l.data):"")+"</span></td></tr>";
+      }).join("")+"</tbody></table></div></div>"
+    : '<div class="empty">Nenhum indicador importado ainda para este município.</div>';
+  h += "</div>";
+
+  // ---- conformidade, de propósito no fim
+  var conf = CONFORMIDADE();
+  if((conf.naoUsar||[]).length){
+    h += '<div class="section">'+callout("danger","proibido",
+      "<b>Nada disso é promessa.</b> São sinais de mercado para orientar a conversa — o resultado depende do franqueado, da execução e das condições vigentes. Continua valendo: "+
+      esc((conf.naoUsar||[]).slice(0,3).join(" · ")))+"</div>";
+  }
+  return h;
+}
+
+function resumoGeoTexto(cod){
+  var m = municipioPorCodigo(cod);
+  if(!m) return "";
+  var a = analisarPraca(m);
+  var L = [m.nome + " (" + m.uf + ")"];
+  if(a.pop) L.push("População: " + fmtNum(a.pop));
+  L.push("Franquias na cidade: " + a.naCidade + " · no estado: " + a.noEstado);
+  if(a.sinais.length){
+    L.push("");
+    L.push("Sinais:");
+    a.sinais.forEach(function(s){ L.push("- " + s.titulo + " — " + s.evidencia); });
+  }
+  if(a.produtos.length){
+    L.push("");
+    L.push("Produtos com maior aderência:");
+    a.produtos.slice(0,5).forEach(function(x){ L.push("- " + x.prod.p + " (" + x.prod.c + ")"); });
+  }
+  L.push("");
+  L.push("Sinais de mercado, não promessa de resultado.");
+  return L.join("\n");
+}
+
+/* ---------------------------------------------------------------------
+   ADMINISTRAÇÃO DOS INDICADORES
+   --------------------------------------------------------------------- */
+function admGeo(){
+  var base = INDICADORES();
+  var campos = base.campos || [];
+  var quantos = Object.keys(base.porMunicipio || {}).length;
+  var cfg = geoConfig();
+
+  var h = '<div class="section-head"><h2>'+ico("grade",17)+"Indicadores por município</h2>"+
+    '<label class="btn btn-primary btn-sm" style="cursor:pointer;">Importar planilha'+
+    '<input type="file" accept=".csv,.xlsx,.xls,text/csv" style="display:none;" data-action-change="importar-indicadores"></label></div>';
+
+  h += callout("accent","livro","A planilha precisa de uma coluna com o <b>município</b> (ou o código do IBGE) e uma com a <b>UF</b>. Toda coluna numérica vira um indicador, nomeado pelo próprio cabeçalho. Importar de novo <b>acrescenta ou atualiza</b> colunas, sem apagar as que já existem.");
+
+  h += '<div class="card" style="margin-bottom:18px;"><b style="font-size:14px;">Onde baixar</b>'+
+    '<ul style="margin:8px 0 0;padding-left:20px;font-size:13.5px;line-height:1.9;">'+
+    "<li><b>Frota de veículos por município</b> — Senatran publica planilha por mês em gov.br/transportes, em Estatísticas → Frota de Veículos.</li>"+
+    "<li><b>População e faixa etária</b> — IBGE Cidades ou SIDRA, tabelas do Censo 2022 por município.</li>"+
+    "<li><b>Qualquer outra</b> — se tiver município e número, entra.</li></ul>"+
+    '<p class="faint" style="margin:10px 0 0;">Não existe contagem oficial de pets por município. O app estima a partir da população, e mostra a conta — o número nunca aparece como se fosse medido.</p></div>';
+
+  h += '<div class="card" style="margin-bottom:18px;"><b style="font-size:14px;">O formato esperado</b>'+
+    '<p class="muted" style="margin:6px 0 12px;font-size:13.5px;">Não precisa arrumar a planilha do órgão: baixe, confira se tem estas duas colunas e suba. '+
+    "O nome do cabeçalho vira o nome do indicador, e a ordem das colunas não importa.</p>"+
+    '<div style="overflow-x:auto;"><table class="tbl"><thead><tr>'+
+    "<th>UF</th><th>MUNICIPIO</th><th>TOTAL DE VEÍCULOS</th><th>POPULAÇÃO</th></tr></thead><tbody>"+
+    '<tr><td>PR</td><td>Curitiba</td><td class="num">1.234.567</td><td class="num">1.773.718</td></tr>'+
+    '<tr><td>MT</td><td>Sinop</td><td class="num">123.456</td><td class="num">195.412</td></tr>'+
+    "</tbody></table></div>"+
+    '<p class="faint" style="margin:10px 0 0;">Os números acima são só ilustração do formato. '+
+    "Ponto como separador de milhar e vírgula como decimal são lidos do jeito brasileiro — <b>1.234.567</b> entra como um milhão, não como mil e duzentos.</p></div>";
+
+  if(!campos.length){
+    h += '<div class="empty">Nenhum indicador importado.<br><span class="faint">Sem eles, o raio-X ainda funciona com os dados da própria rede.</span></div>';
+  } else {
+    h += '<div class="row-between" style="margin-bottom:10px;"><b>'+campos.length+" indicador"+(campos.length===1?"":"es")+
+      " · "+fmtNum(quantos)+" municípios com dado</b></div>";
+    h += "<div>"+campos.map(function(c){
+      var n = 0;
+      Object.keys(base.porMunicipio||{}).forEach(function(k){
+        if(base.porMunicipio[k][c.id] != null) n++;
+      });
+      return linhaItem(esc(c.nome),
+        fmtNum(n)+" municípios · fonte: "+esc(c.fonte||"não informada")+(c.data? " · "+esc(c.data):""),
+        '<button class="btn btn-sm" data-action="editar-indicador" data-id="'+esc(c.id)+'">Fonte e nome</button>'+
+        btnExcluir("excluir-indicador",'data-id="'+esc(c.id)+'"'));
+    }).join("")+"</div>";
+  }
+
+  h += '<div class="section" style="margin-top:26px;"><div class="section-head"><h2>'+ico("config",17)+"Ajustes das estimativas</h2>"+
+    '<button class="btn btn-sm" data-action="editar-geoconfig">Editar</button></div>'+
+    '<div class="card"><dl class="kv">'+
+    "<dt>Pets por habitante</dt><dd>"+(cfg.taxaPet||0)+"</dd>"+
+    "<dt>Fonte</dt><dd>"+esc(cfg.fontePet||"—")+"</dd>"+
+    "<dt>Fatia 60+</dt><dd>"+Math.round((cfg.taxaIdoso||0)*100)+"%</dd>"+
+    "<dt>Fonte</dt><dd>"+esc(cfg.fonteIdoso||"—")+"</dd>"+
+    "<dt>Praças-sede</dt><dd>"+((cfg.sedes||[]).map(function(c){
+        var m = municipioPorCodigo(c); return m? m.nome+"/"+m.uf : c;
+      }).join(", ") || "nenhuma")+"</dd></dl>"+
+    '<p class="faint" style="margin:10px 0 0;">Praça-sede sai da comparação de mix: a matriz concentra pilotos e distorce a leitura.</p></div></div>';
+
+  // Diagnóstico da consulta ao vivo. Serve para você saber por que o
+  // número do IBGE não apareceu, em vez de ficar adivinhando.
+  var cache = ibgeCache(), nCache = Object.keys(cache).length;
+  h += '<div class="section"><div class="section-head"><h2>'+ico("lupa",17)+"Consulta ao IBGE</h2>"+
+    (nCache? '<button class="btn btn-sm" data-action="limpar-ibge">Limpar cache</button>':"")+"</div>"+
+    '<div class="card"><p class="muted" style="margin:0 0 10px;font-size:13.5px;">'+
+    "Ao abrir uma cidade sem população importada, o app pergunta a população ao IBGE. "+
+    "A resposta fica <b>só neste navegador</b> — é consulta a portal público, não conteúdo da empresa, "+
+    "e assim um vendedor não sobrescreve o que outro consultou. O número importado sempre vence o da consulta.</p>"+
+    '<dl class="kv"><dt>Cidades já consultadas</dt><dd>'+nCache+"</dd>"+
+    "<dt>Última falha</dt><dd>"+(ui.ibgeErro
+      ? esc(ui.ibgeErro)+' <span class="faint">— normal em rede com bloqueio; a tela funciona sem isso</span>'
+      : '<span class="faint">nenhuma</span>')+"</dd></dl></div></div>";
+  return h;
+}
+
+var CAMPOS_GEOCONFIG = [
+  {id:"taxaPet", rot:"Pets por habitante", ph:"ex.: 0,8",
+   dica:"usado só quando não há contagem importada"},
+  {id:"fontePet", rot:"Fonte da taxa de pets", largo:true, ph:"ex.: estimativa de mercado, 2025"},
+  {id:"taxaIdoso", rot:"Fatia da população com 60+ (%)", ph:"ex.: 15"},
+  {id:"fonteIdoso", rot:"Fonte da fatia 60+", largo:true, ph:"ex.: média nacional"},
+  {id:"sedes", rot:"Praças-sede", tipo:"textarea", largo:true, alt:60,
+   dica:"uma cidade por linha, no formato Cidade/UF"}
+];
+
+/* ---- importação de indicadores ---- */
+var COL_MUNICIPIO = ["municipio","cidade","nome do municipio","municipios","nm_mun"];
+var COL_UF_IND    = ["uf","estado","sigla","sg_uf"];
+var COL_CODIGO    = ["codigo ibge","cod ibge","codigo do municipio","cod municipio","codigo","ibge","cd_mun"];
+
+function importarIndicadores(linhas){
+  if(!linhas.length) throw new Error("planilha-vazia");
+  var cab = linhas[0];
+  var iMun = -1, iUf = -1, iCod = -1;
+  cab.forEach(function(t, i){
+    var k = chaveColuna(t);
+    if(iCod < 0 && COL_CODIGO.some(function(a){ return k === chaveColuna(a); })) iCod = i;
+    if(iMun < 0 && COL_MUNICIPIO.some(function(a){ return k === chaveColuna(a); })) iMun = i;
+    if(iUf  < 0 && COL_UF_IND.some(function(a){ return k === chaveColuna(a); })) iUf = i;
+  });
+  if(iCod < 0 && iMun < 0) throw new Error("sem-municipio");
+
+  // toda coluna que não é identificação e tem número vira indicador
+  var numericas = [];
+  cab.forEach(function(t, i){
+    if(i === iMun || i === iUf || i === iCod) return;
+    var titulo = String(t || "").trim();
+    if(!titulo) return;
+    var achouNumero = linhas.slice(1, 40).some(function(l){ return lerNumero(l[i]) != null; });
+    if(achouNumero) numericas.push({i: i, id: idCanonico(titulo), nome: titulo});
+  });
+  if(!numericas.length) throw new Error("sem-numeros");
+
+  var base = clonar(INDICADORES());
+  base.porMunicipio = base.porMunicipio || {};
+  base.campos = base.campos || [];
+  numericas.forEach(function(c){
+    if(!base.campos.some(function(x){ return x.id === c.id; })){
+      base.campos.push({id:c.id, nome:c.nome, fonte:"", data:""});
+    }
+  });
+
+  var casados = 0, perdidos = [];
+  linhas.slice(1).forEach(function(l){
+    var m = null;
+    if(iCod >= 0){
+      var cod = String(l[iCod] || "").replace(/\D/g,"");
+      if(cod.length === 7) m = municipioPorCodigo(cod);
+    }
+    if(!m && iMun >= 0){
+      m = acharMunicipio(String(l[iMun] || ""), iUf >= 0 ? String(l[iUf] || "").toUpperCase().slice(0,2) : null);
+    }
+    if(!m){
+      var q = iMun >= 0 ? String(l[iMun] || "").trim() : "";
+      if(q && perdidos.length < 12 && perdidos.indexOf(q) < 0) perdidos.push(q);
+      return;
+    }
+    casados++;
+    var reg = base.porMunicipio[m.cod] || (base.porMunicipio[m.cod] = {});
+    numericas.forEach(function(c){
+      var v = lerNumero(l[c.i]);
+      if(v != null) reg[c.id] = v;
+    });
+  });
+  if(!casados) throw new Error("nenhum-casou");
+  return {base: base, casados: casados, campos: numericas, perdidos: perdidos};
+}
+
+// As regras de aderência procuram por "frota", "populacao" e "idosos".
+// Sem isto, uma coluna chamada "TOTAL DE VEÍCULOS" viraria o indicador
+// "total-de-veiculos" e nenhum sinal dispararia — o número apareceria na
+// tabela e não serviria para nada.
+var APELIDOS_INDICADOR = {
+  frota:     ["frota","total de veiculos","veiculos","total frota","frota total","frota de veiculos"],
+  populacao: ["populacao","habitantes","pop","populacao estimada","populacao residente"],
+  idosos:    ["idosos","pessoas 60 anos ou mais","60 anos ou mais","populacao 60","idosa","60+"],
+  domicilios:["domicilios","total de domicilios"],
+  empresas:  ["empresas","estabelecimentos","unidades locais"]
+};
+function idCanonico(titulo){
+  var k = chaveColuna(titulo);
+  var achou = null;
+  Object.keys(APELIDOS_INDICADOR).forEach(function(canon){
+    if(achou) return;
+    if(APELIDOS_INDICADOR[canon].some(function(a){
+      var ac = chaveColuna(a);
+      return k === ac || k.indexOf(ac) === 0;
+    })) achou = canon;
+  });
+  return achou || slug(titulo);
+}
+
+// Número em planilha brasileira. O caso perigoso é o ponto sozinho:
+// "719.126" é setecentos mil, não setecentos e dezenove vírgula cento e
+// vinte e seis. Só dá para distinguir pelo formato — grupos de exatamente
+// três dígitos depois de cada ponto são separador de milhar.
+function lerNumero(v){
+  if(v == null || v === "") return null;
+  if(typeof v === "number") return isFinite(v) ? v : null;
+  var s = String(v).trim().replace(/\s|\u00a0/g,"");
+  if(!s || !/\d/.test(s)) return null;
+  var negativo = /^-/.test(s) || /^\(.*\)$/.test(s);
+  s = s.replace(/[^0-9.,]/g,"");
+  if(!s) return null;
+
+  var temPonto = s.indexOf(".") > -1, temVirgula = s.indexOf(",") > -1;
+  if(temPonto && temVirgula){
+    // o último separador é o decimal
+    s = (s.lastIndexOf(",") > s.lastIndexOf("."))
+      ? s.replace(/\./g,"").replace(",", ".")
+      : s.replace(/,/g,"");
+  } else if(temVirgula){
+    s = /^\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g,"") : s.replace(",", ".");
+  } else if(temPonto){
+    s = /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g,"") : s;
+  }
+  var n = parseFloat(s);
+  if(!isFinite(n)) return null;
+  return negativo ? -Math.abs(n) : n;
+}
+
+/* ---------------------------------------------------------------------
+   IBGE ao vivo — complemento, nunca dependência
+   --------------------------------------------------------------------- */
+var IBGE_POP = "https://servicodados.ibge.gov.br/api/v3/agregados/6579/periodos/-1/variaveis/9324?localidades=N6[{cod}]";
+
+// Cache da consulta ao vivo. Fica só neste navegador, de propósito:
+// consulta a portal público não é conteúdo da empresa. Se fosse para a
+// tabela `conteudo`, cada vendedor reescreveria a coleção inteira ao
+// abrir uma cidade — e o RLS recusaria a escrita de quem não é
+// administrador, deixando um erro silencioso na tela de todo mundo.
+var IBGE_CHAVE = "bussola_ibge_v1";
+var _ibge = null;
+function ibgeCache(){
+  if(_ibge) return _ibge;
+  try{ _ibge = JSON.parse(localStorage.getItem(IBGE_CHAVE) || "{}") || {}; }
+  catch(e){ _ibge = {}; }
+  return _ibge;
+}
+function guardarIbge(cod, valores, campos){
+  var c = ibgeCache();
+  c[cod] = {valores: valores, campos: campos, em: nowISO()};
+  try{ localStorage.setItem(IBGE_CHAVE, JSON.stringify(c)); }catch(e){}
+}
+
+// Chama o IBGE em segundo plano. Se responder, o número entra como um
+// indicador normal, com fonte e ano. Se não, ninguém fica sabendo — a
+// tela já estava útil sem ele.
+function tentarIbge(cod){
+  var m = municipioPorCodigo(cod);
+  if(!m) return;
+  if(ibgeCache()[cod]) return;               // já perguntamos por esta cidade
+  var salvo = (INDICADORES().porMunicipio || {})[cod] || {};
+  if(salvo.populacao != null) return;        // o importado manda; não incomoda o IBGE
+  buscarIbge(m).then(function(r){
+    guardarIbge(cod, {populacao: r.populacao},
+      [{id:"populacao", nome:"População", fonte:"IBGE — consulta ao vivo", data:r.ano}]);
+    if(ui.view === "geo" && ui.geoCidade === cod) render();
+  }).catch(function(err){
+    // guarda o motivo para o diagnóstico do administrador
+    ui.ibgeErro = String((err && err.message) || "erro");
+  });
+}
+
+function buscarIbge(m){
+  if(!window.fetch) return Promise.reject(new Error("sem-fetch"));
+  var url = IBGE_POP.replace("{cod}", m.cod);
+  var corta = new Promise(function(_, falha){ setTimeout(function(){ falha(new Error("tempo")); }, 8000); });
+  return Promise.race([fetch(url, {mode:"cors"}), corta])
+    .then(function(r){
+      if(!r.ok) throw new Error("http-"+r.status);
+      return r.json();
+    })
+    .then(function(j){
+      var serie = j && j[0] && j[0].resultados && j[0].resultados[0] &&
+                  j[0].resultados[0].series && j[0].resultados[0].series[0];
+      if(!serie || !serie.serie) throw new Error("formato");
+      var anos = Object.keys(serie.serie).sort();
+      var ano = anos[anos.length-1];
+      var valor = lerNumero(serie.serie[ano]);
+      if(valor == null) throw new Error("vazio");
+      return {populacao: valor, ano: ano};
+    });
 }
 
 /* =========================================================================
