@@ -4329,15 +4329,22 @@ function handle(action, el){
     }
     case "abrir-ibge": {
       var corpo = '<p class="muted" style="margin:0 0 14px;font-size:14px;">'+
-        "Escolha o que baixar. Tudo vem do IBGE, para os 5.570 municípios, com a tabela de origem e o ano."+
-        "</p><div class=\"stack\" style=\"gap:8px;\">"+
-        BLOCOS_IBGE.map(function(b){
-          return '<label class="linha-item" style="cursor:pointer;align-items:flex-start;">'+
-            '<input type="checkbox" class="ibge-op" value="'+b.id+'" checked style="margin:3px 12px 0 0;flex:0 0 auto;">'+
-            '<span class="linha-main"><span class="linha-tit">'+esc(b.nome)+"</span>"+
-            '<span class="linha-sub">'+esc(b.sobre)+"</span>"+
-            '<span class="faint" id="ibge-st-'+b.id+'"></span></span></label>';
-        }).join("")+"</div>"+
+        "Escolha o que baixar. Tudo vem do IBGE, para os 5.570 municípios, com a tabela de origem e o ano. "+
+        "Baixar tudo leva perto de um minuto — frota e educação são as demoradas, porque o IBGE não deixa pedir o país inteiro de uma vez nessas duas."+
+        "</p>"+
+        TEMAS_IBGE.map(function(t){
+          var doTema = BLOCOS_IBGE.filter(function(b){ return b.tema === t.k; });
+          if(!doTema.length) return "";
+          return '<div style="margin-bottom:14px;"><div class="eyebrow" style="margin-bottom:6px;">'+esc(t.n)+"</div>"+
+            '<div class="stack" style="gap:8px;">'+doTema.map(function(b){
+              return '<label class="linha-item" style="cursor:pointer;align-items:flex-start;">'+
+                '<input type="checkbox" class="ibge-op" value="'+b.id+'" checked style="margin:3px 12px 0 0;flex:0 0 auto;">'+
+                '<span class="linha-main"><span class="linha-tit">'+esc(b.nome)+
+                  ' <span class="faint">'+camposDoBloco(b).length+(camposDoBloco(b).length===1?" indicador":" indicadores")+"</span></span>"+
+                '<span class="linha-sub">'+esc(b.sobre)+"</span>"+
+                '<span class="faint" id="ibge-st-'+b.id+'"></span></span></label>';
+            }).join("")+"</div></div>";
+        }).join("")+
         '<p class="faint" style="margin:14px 0 0;">Importar de novo <b>substitui</b> estes indicadores e mantém os que vieram de planilha, como a frota.</p>'+
         '<div class="row" style="justify-content:flex-end;margin-top:16px;">'+
         '<button class="btn" data-action="close-modal">Cancelar</button>'+
@@ -5994,6 +6001,21 @@ function campoIndicador(id){
   for(var i=0;i<campos.length;i++) if(campos[i].id === id) return campos[i];
   return null;
 }
+// Dinheiro em escala de município: R$ 120 bilhões escrito por extenso
+// não cabe na tela nem se lê de relance. Duas casas só quando ajudam.
+function fmtDinheiro(v){
+  var n = Number(v);
+  if(!isFinite(n)) return "—";
+  var abs = Math.abs(n);
+  if(abs >= 1e9) return "R$ " + (n/1e9).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " bi";
+  if(abs >= 1e6) return "R$ " + (n/1e6).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " mi";
+  if(abs >= 1e3) return "R$ " + (n/1e3).toLocaleString("pt-BR",{maximumFractionDigits:0}) + " mil";
+  return "R$ " + n.toLocaleString("pt-BR",{maximumFractionDigits:0});
+}
+// Formata pelo que o campo é, não pelo tamanho do número.
+function fmtCampo(valor, campo){
+  return (campo && campo.formato === "moeda") ? fmtDinheiro(valor) : fmtNum(valor);
+}
 function fmtNum(v){
   if(v == null || v === "") return "—";
   var n = Number(v);
@@ -6050,7 +6072,8 @@ var REGRAS_GEO = [
         forca: porMil >= 500 ? "alta" : "média",
         titulo: "Frota grande para o tamanho da cidade",
         evidencia: fmtNum(c.ind.frota) + " veículos — " + Math.round(porMil) +
-                   " por mil habitantes" + (porMil >= 500 ? ", acima da média do país" : ""),
+                   " por mil habitantes" + (porMil >= 500 ? ", acima da média do país" : "") +
+                   (c.ind.motos > 0 ? " · " + fmtNum(c.ind.motos) + " são motos" : ""),
         ramos: ["seguros"],
         chaves: ["auto","moto","veic","rastr"],
         fala: "Só de frota, " + c.m.nome + " tem cerca de " + fmtNum(c.ind.frota) +
@@ -6087,6 +6110,57 @@ var REGRAS_GEO = [
         chaves: ["pet"],
         fala: "Pela população, " + c.m.nome + " deve ter perto de " + fmtNum(c.pets) +
               " pets. Plano pet é entrada fácil: ticket baixo, decisão rápida e abre a conversa para os outros produtos."
+      };
+    }
+  },
+  {
+    // Agro: o rebanho e o valor da lavoura dizem se a praça vive da
+    // terra. Numa cidade assim o vendedor entra por outra porta — não
+    // adianta falar de maquininha para quem tem 100 mil cabeças de gado.
+    id:"agro",
+    quando: function(c){ return c.ind.bovinos > 0 || c.ind.valorLavoura > 0; },
+    avaliar: function(c){
+      var bois = Number(c.ind.bovinos) || 0;
+      var lavoura = Number(c.ind.valorLavoura) || 0;
+      var boisPorHab = c.pop ? bois / c.pop : 0;
+      var forte = boisPorHab >= 2 || lavoura >= 500000000;
+      if(!forte && boisPorHab < 0.5 && lavoura < 50000000) return null;
+      var provas = [];
+      if(bois) provas.push(fmtNum(bois) + " cabeças de gado" +
+        (boisPorHab >= 1 ? " — " + boisPorHab.toFixed(1) + " por habitante" : ""));
+      if(lavoura) provas.push(fmtDinheiro(lavoura) + " em produção agrícola no ano");
+      return {
+        forca: forte ? "alta" : "média",
+        titulo: "Praça do agro",
+        evidencia: provas.join(" · "),
+        ramos: ["seguros","financeiro","diversos"],
+        chaves: ["rural","agro","maquin","consorcio","caminh","imov","vida","patrimon"],
+        fala: c.m.nome + " é praça de agro — " + provas[0] + ". Quem produz aí compra máquina, caminhão e terra, "+
+              "e o consórcio é a forma como isso é financiado. Seguro rural e de vida entram junto, porque o "+
+              "produtor sabe o tamanho do risco dele melhor do que ninguém."
+      };
+    }
+  },
+  {
+    // Empresas ativas é evidência melhor que população para a linha PJ:
+    // cidade-dormitório tem gente e não tem comércio.
+    id:"empresas",
+    quando: function(c){ return c.ind.empresas > 0 && c.pop > 0; },
+    avaliar: function(c){
+      var emp = Number(c.ind.empresas);
+      var porMil = emp / c.pop * 1000;
+      if(porMil < 15) return null;
+      var salarios = Number(c.ind.salarios) || 0;
+      return {
+        forca: porMil >= 30 ? "alta" : "média",
+        titulo: "Comércio e serviço com densidade",
+        evidencia: fmtNum(emp) + " empresas ativas — " + Math.round(porMil) + " por mil habitantes" +
+                   (salarios ? " · " + fmtDinheiro(salarios) + " em salários no ano" : ""),
+        ramos: ["pagamentos","financeiro","seguros"],
+        chaves: ["empres","pj","maquin","cartao","capital","credito","frota","vida"],
+        fala: "São " + fmtNum(emp) + " empresas ativas em " + c.m.nome + ". Cada uma é uma conversa possível de "+
+              "maquininha, seguro empresarial e capital de giro — e é uma carteira que se renova sozinha, "+
+              "porque empresa não some de um ano para o outro."
       };
     }
   },
@@ -6372,7 +6446,7 @@ function painelGeo(a){
   var linhas = [];
   camposDaCidade(m).forEach(function(c){
     if(ind[c.id] == null || ind[c.id] === "") return;
-    linhas.push({nome:c.nome, valor:fmtNum(ind[c.id]), fonte:c.fonte, data:c.data});
+    linhas.push({nome:c.nome, valor:fmtCampo(ind[c.id], c), fonte:c.fonte, data:c.data});
   });
   a.estimativas.forEach(function(e){
     linhas.push({nome:e.nome, valor:fmtNum(e.valor), fonte:e.fonte, data:"", conta:e.conta});
@@ -6449,10 +6523,13 @@ function admGeo(){
     '<button class="btn btn-primary btn-sm" data-action="abrir-ibge">Importar do IBGE</button></div>'+
     '<div class="row" style="margin-top:12px;flex-wrap:wrap;gap:6px;">'+
     BLOCOS_IBGE.map(function(b){
-      var tem = (base0.campos||[]).some(function(c){ return c.id===b.id; });
+      var tem = camposDoBloco(b).some(function(f){
+        return (base0.campos||[]).some(function(c){ return c.id===f; });
+      });
       return '<span class="pill '+(tem?"pill-success":"")+'">'+esc(b.nome)+(tem?" ✓":"")+"</span>";
     }).join("")+"</div>"+
-    '<p class="faint" style="margin:10px 0 0;">Frota de veículos <b>não é do IBGE</b> — é do Senatran, e continua vindo por planilha, logo abaixo.</p></div>';
+    '<p class="faint" style="margin:10px 0 0;">São '+contarIndicadoresIbge()+
+    " indicadores no total. A frota vem do SENATRAN, publicada pelo IBGE na pesquisa 22 — não precisa mais de planilha.</p></div>";
 
   h += '<div class="card" style="margin-bottom:18px;"><b style="font-size:14px;">Onde baixar</b>'+
     '<ul style="margin:8px 0 0;padding-left:20px;font-size:13.5px;line-height:1.9;">'+
@@ -6742,19 +6819,27 @@ function numeroIbge(v){
 }
 
 // Percorre a resposta do agregado e devolve {codigo: valor} + o ano.
+// Percorre a resposta e devolve {codigo: valor} + o ano de fato usado.
+//
+// O ano mais recente nem sempre tem número: o IBGE já publica o período
+// com "..." antes de ter o dado. O PIB de 2023 está lá, mas o valor
+// adicionado por setor ainda não — vem "..." em todo município. Por isso
+// aqui se pede uma faixa de anos e se recua até achar valor de verdade,
+// em vez de pegar o último e desistir.
 function lerSeries(json, acumular){
   var mapa = {}, ano = "";
   (json || []).forEach(function(v){
     (v.resultados || []).forEach(function(bloco){
       (bloco.series || []).forEach(function(s){
         var anos = Object.keys(s.serie || {}).sort();
-        if(!anos.length) return;
-        var a = anos[anos.length-1];
-        if(a > ano) ano = a;
-        var n = numeroIbge(s.serie[a]);
-        if(n == null) return;
-        var cod = s.localidade.id;
-        mapa[cod] = acumular ? (mapa[cod] || 0) + n : n;
+        for(var i = anos.length - 1; i >= 0; i--){
+          var n = numeroIbge(s.serie[anos[i]]);
+          if(n == null) continue;                 // "...", "-", vazio: tenta o anterior
+          if(anos[i] > ano) ano = anos[i];
+          var cod = s.localidade.id;
+          mapa[cod] = acumular ? (mapa[cod] || 0) + n : n;
+          break;
+        }
       });
     });
   });
@@ -6772,13 +6857,134 @@ function pegarIbge(caminho){
     });
 }
 
+/* ---------------------------------------------------------------------
+   A OUTRA API DO IBGE — "Cidades"
+
+   O que está em /api/v3/agregados são as pesquisas do próprio IBGE. A
+   frota de veículos NÃO está lá: ela mora em /api/v1/pesquisas, que é o
+   que alimenta o IBGE Cidades, e a origem é o SENATRAN. Levei um tempo
+   para achar porque procurei no lugar errado primeiro.
+
+   Duas diferenças em relação à outra API, e as duas mordem:
+   · o código do município volta com 6 dígitos (410690), sem o dígito
+     verificador — enquanto o resto do app usa 7 (4106902);
+   · não aceita "todos os municípios": acima de ~1.000 códigos por URL o
+     servidor responde HTML de erro. Vai em lotes de 500.
+   --------------------------------------------------------------------- */
+
+var CIDADES_API = "https://servicodados.ibge.gov.br/api/v1/pesquisas/";
+var LOTE_CIDADES = 500;
+
+function pegarCidades(caminho){
+  var corta = new Promise(function(_, falha){
+    setTimeout(function(){ falha(new Error("o IBGE demorou demais")); }, 45000);
+  });
+  return Promise.race([fetch(CIDADES_API + caminho, {mode:"cors"}), corta])
+    .then(function(r){
+      if(!r.ok) throw new Error("o IBGE respondeu " + r.status);
+      return r.json();
+    });
+}
+
+/* Busca indicadores da API Cidades para todos os municípios, em lotes.
+   `indicadores` é {idDoIndicador: idDoCampoNoApp}. */
+function buscarCidades(pesquisa, periodo, indicadores, aviso){
+  var ids = Object.keys(indicadores);
+  var codigos = todosOsCodigos();
+  var lotes = [];
+  for(var i = 0; i < codigos.length; i += LOTE_CIDADES) lotes.push(codigos.slice(i, i + LOTE_CIDADES));
+
+  var porCampo = {}, ano = String(periodo);
+  ids.forEach(function(id){ porCampo[indicadores[id]] = {}; });
+
+  return lotes.reduce(function(fila, lote, i){
+    return fila.then(function(){
+      if(aviso) aviso(i, lotes.length);
+      return pegarCidades(pesquisa + "/periodos/" + periodo + "/indicadores/" +
+                          ids.join("|") + "/resultados/" + lote.join("|"))
+        .then(function(j){
+          (j || []).forEach(function(bloco){
+            var campo = indicadores[String(bloco.id)];
+            if(!campo) return;
+            (bloco.res || []).forEach(function(x){
+              var anos = Object.keys(x.res || {}).sort();
+              for(var k = anos.length - 1; k >= 0; k--){
+                var n = numeroIbge(x.res[anos[k]]);
+                if(n == null) continue;
+                // 6 dígitos → o código de 7 que o resto do app usa
+                var cod = completarCodigo(String(x.localidade));
+                if(cod) porCampo[campo][cod] = n;
+                break;
+              }
+            });
+          });
+        });
+    });
+  }, Promise.resolve()).then(function(){ return {porCampo: porCampo, ano: ano}; });
+}
+
+// Lista dos 5.565 códigos que o app já traz embutidos — não precisa
+// perguntar ao IBGE quais municípios existem.
+var _codigos = null;
+function todosOsCodigos(){
+  if(_codigos) return _codigos;
+  _codigos = municipios().map(function(m){ return m.cod; });
+  return _codigos;
+}
+// De 410690 para 4106902: o app indexa por código completo.
+var _por6 = null;
+function completarCodigo(seis){
+  if(seis.length === 7) return seis;
+  if(!_por6){
+    _por6 = {};
+    todosOsCodigos().forEach(function(c){ _por6[c.slice(0,6)] = c; });
+  }
+  return _por6[seis] || null;
+}
+
 // As nove faixas de cinco anos que somam "60 anos ou mais". Não existe
 // uma categoria pronta para isso no Censo — tem que somar.
 var FAIXAS_60 = ["93095","93096","93097","93098","49108","49109","60040","60041","6653"];
 
+// A API Cidades exige o período na URL — não aceita "o mais recente".
+// Se o IBGE publicar um ano novo, é aqui que se troca.
+var ANO_FROTA   = 2025;
+var ANO_ESCOLAR = 2024;
+var ANO_IDEB    = 2023;
+
+// Uma resposta de agregado com várias variáveis, repartida por campo.
+function porVariavel(json, mapa){
+  var porCampo = {}, anoPorCampo = {}, ano = "";
+  Object.keys(mapa).forEach(function(v){ porCampo[mapa[v]] = {}; });
+  (json || []).forEach(function(v){
+    var campo = mapa[String(v.id)];
+    if(!campo) return;
+    var r = lerSeries([v], false);
+    porCampo[campo] = r.valores;
+    anoPorCampo[campo] = r.ano;      // o PIB tem 2023, o setorial parou em 2021
+    if(r.ano > ano) ano = r.ano;
+  });
+  return {porCampo: porCampo, anoPorCampo: anoPorCampo, ano: ano};
+}
+
+// Nome de cada indicador na tela. Sem isto o cabeçalho da tabela do
+// IBGE viraria o rótulo, e "vabAgro" não diz nada a ninguém.
+var NOMES_CAMPO_IBGE = {
+  populacao:"População", idosos:"População 60 anos ou mais",
+  domicilios:"Domicílios", densidade:"Densidade demográfica",
+  frota:"Frota de veículos", automoveis:"Automóveis", motos:"Motocicletas",
+  caminhoes:"Caminhões",
+  pib:"PIB do município", vabAgro:"Riqueza gerada pelo agro",
+  vabIndustria:"Riqueza gerada pela indústria", vabServicos:"Riqueza gerada por serviços",
+  empresas:"Empresas ativas", pessoalOcupado:"Pessoas ocupadas",
+  salarios:"Massa salarial no ano",
+  bovinos:"Rebanho bovino", valorLavoura:"Valor da produção agrícola",
+  matriculas:"Matrículas no ensino fundamental", ideb:"IDEB — anos iniciais, rede municipal"
+};
+
 var BLOCOS_IBGE = [
   {
-    id: "populacao", nome: "População", fonte: "IBGE — estimativa",
+    id: "populacao", nome: "População", fonte: "IBGE — estimativa", tema: "gente",
     sobre: "estimativa mais recente publicada, tabela 6579",
     peso: 1,
     buscar: function(){
@@ -6787,7 +6993,7 @@ var BLOCOS_IBGE = [
     }
   },
   {
-    id: "idosos", nome: "População 60 anos ou mais", fonte: "IBGE — Censo",
+    id: "idosos", nome: "População 60 anos ou mais", fonte: "IBGE — Censo", tema: "gente",
     sobre: "Censo 2022, tabela 9514 — soma das nove faixas de 60 em diante",
     peso: 9,
     buscar: function(aviso){
@@ -6811,7 +7017,7 @@ var BLOCOS_IBGE = [
     }
   },
   {
-    id: "domicilios", nome: "Domicílios", fonte: "IBGE — Censo",
+    id: "domicilios", nome: "Domicílios", fonte: "IBGE — Censo", tema: "gente",
     sobre: "domicílios particulares permanentes ocupados, Censo 2022, tabela 4712",
     peso: 1,
     buscar: function(){
@@ -6820,7 +7026,7 @@ var BLOCOS_IBGE = [
     }
   },
   {
-    id: "densidade", nome: "Densidade demográfica", fonte: "IBGE — Censo",
+    id: "densidade", nome: "Densidade demográfica", fonte: "IBGE — Censo", tema: "gente",
     sobre: "habitantes por km², Censo 2022, tabela 4714",
     peso: 1,
     buscar: function(){
@@ -6828,6 +7034,98 @@ var BLOCOS_IBGE = [
         .then(function(j){ return lerSeries(j, false); });
     }
   }
+,
+  {
+    id: "frota", nome: "Frota de veículos", fonte: "IBGE/SENATRAN", tema: "mobilidade",
+    sobre: "frota total, automóveis, motos e caminhões — pesquisa 22, origem SENATRAN",
+    peso: 12, campos: ["frota","automoveis","motos","caminhoes"],
+    buscar: function(aviso){
+      return buscarCidades(22, ANO_FROTA, {
+        "28120":"frota", "28122":"automoveis", "28128":"motos", "28123":"caminhoes"
+      }, aviso);
+    }
+  },
+  {
+    id: "economia", nome: "Economia — PIB e setores", fonte: "IBGE — PIB dos Municípios", tema: "economia",
+    sobre: "PIB e o quanto vem de agro, indústria e serviços — tabela 5938",
+    peso: 1, campos: ["pib","vabAgro","vabIndustria","vabServicos"], moeda: ["pib","vabAgro","vabIndustria","vabServicos"],
+    buscar: function(){
+      // Pede cinco anos: o mais recente costuma ter o PIB mas ainda não o
+      // valor adicionado por setor, que vem como "..." até ser publicado.
+      return pegarIbge("5938/periodos/2019|2020|2021|2022|2023/variaveis/37|513|517|6575?localidades=N6[all]")
+        .then(function(j){ return porVariavel(j, {"37":"pib","513":"vabAgro","517":"vabIndustria","6575":"vabServicos"}); });
+    }
+  },
+  {
+    id: "empresas", nome: "Empresas e emprego", fonte: "IBGE — Cadastro Central de Empresas", tema: "economia",
+    sobre: "empresas ativas, pessoal ocupado e massa salarial — tabela 6449",
+    peso: 1, campos: ["empresas","pessoalOcupado","salarios"], moeda: ["salarios"],
+    buscar: function(){
+      return pegarIbge("6449/periodos/-5/variaveis/2585|707|662?localidades=N6[all]&classificacao=12762[117897]")
+        .then(function(j){ return porVariavel(j, {"2585":"empresas","707":"pessoalOcupado","662":"salarios"}); });
+    }
+  },
+  {
+    id: "agro", nome: "Agro e pecuária", fonte: "IBGE — PPM e PAM", tema: "agro",
+    sobre: "rebanho bovino e valor da produção das lavouras — tabelas 3939 e 5457",
+    peso: 2, campos: ["bovinos","valorLavoura"], moeda: ["valorLavoura"],
+    buscar: function(aviso){
+      var saida = {porCampo: {bovinos:{}, valorLavoura:{}}, ano: "", anoPorCampo: {}};
+      if(aviso) aviso(0, 2);
+      return pegarIbge("3939/periodos/-3/variaveis/105?localidades=N6[all]&classificacao=79[2670]")
+        .then(function(j){
+          var r = lerSeries(j, false);
+          saida.porCampo.bovinos = r.valores;
+          saida.anoPorCampo.bovinos = r.ano;
+          if(r.ano > saida.ano) saida.ano = r.ano;
+          if(aviso) aviso(1, 2);
+          return pegarIbge("5457/periodos/-3/variaveis/215?localidades=N6[all]&classificacao=782[0]");
+        })
+        .then(function(j){
+          var r = lerSeries(j, false);
+          saida.porCampo.valorLavoura = r.valores;
+          saida.anoPorCampo.valorLavoura = r.ano;
+          if(r.ano > saida.ano) saida.ano = r.ano;
+          return saida;
+        });
+    }
+  },
+  {
+    id: "educacao", nome: "Educação", fonte: "IBGE/INEP", tema: "social",
+    sobre: "matrículas no ensino fundamental e a nota do IDEB — pesquisas 13 e 40",
+    peso: 24, campos: ["matriculas","ideb"],
+    buscar: function(aviso){
+      // O censo escolar e o IDEB são de anos diferentes, e cada número
+      // precisa carregar o seu — senão a tela credita ao IDEB um ano que
+      // não é o dele, e quem citar isso numa reunião passa vergonha.
+      var saida = {porCampo: {matriculas:{}, ideb:{}}, ano: "", anoPorCampo: {}};
+      return buscarCidades(13, ANO_ESCOLAR, {"5908":"matriculas"}, function(i,n){ if(aviso) aviso(i, n*2); })
+        .then(function(r){
+          saida.porCampo.matriculas = r.porCampo.matriculas;
+          saida.anoPorCampo.matriculas = r.ano;
+          saida.ano = r.ano;
+          return buscarCidades(40, ANO_IDEB, {"78188":"ideb"}, function(i,n){ if(aviso) aviso(n+i, n*2); });
+        })
+        .then(function(r){
+          saida.porCampo.ideb = r.porCampo.ideb;
+          saida.anoPorCampo.ideb = r.ano;
+          return saida;
+        });
+    }
+  }
+];
+
+// Um bloco pode trazer vários indicadores (frota traz quatro).
+function camposDoBloco(b){ return b.campos || [b.id]; }
+function contarIndicadoresIbge(){
+  return BLOCOS_IBGE.reduce(function(n,b){ return n + camposDoBloco(b).length; }, 0);
+}
+var TEMAS_IBGE = [
+  {k:"gente",      n:"Gente e moradia"},
+  {k:"mobilidade", n:"Mobilidade"},
+  {k:"economia",   n:"Economia"},
+  {k:"agro",       n:"Agro e pecuária"},
+  {k:"social",     n:"Educação"}
 ];
 
 function blocoIbge(id){
@@ -6852,9 +7150,15 @@ function importarDoIbge(ids, aoAndar){
       return b.buscar(function(i, n){
         if(aoAndar) aoAndar(id, "andando", "parte " + (i+1) + " de " + n);
       }).then(function(r){
-        var quantos = Object.keys(r.valores).length;
+        // dois formatos: um campo só ({valores}) ou vários ({porCampo})
+        var porCampo = r.porCampo || {};
+        if(r.valores) porCampo[b.id] = r.valores;
+        var quantos = 0;
+        Object.keys(porCampo).forEach(function(k){
+          quantos = Math.max(quantos, Object.keys(porCampo[k]).length);
+        });
         if(!quantos) throw new Error("veio vazio");
-        colhido.push({bloco: b, r: r});
+        colhido.push({bloco: b, porCampo: porCampo, ano: r.ano, anoPorCampo: r.anoPorCampo || {}});
         if(aoAndar) aoAndar(id, "ok", fmtNum(quantos) + " municípios · " + r.ano);
       }).catch(function(e){
         erros.push(b.nome + ": " + (e.message || "falhou"));
@@ -6867,14 +7171,24 @@ function importarDoIbge(ids, aoAndar){
     if(!colhido.length) throw new Error(erros.join(" · ") || "nada foi baixado");
     colhido.forEach(function(c){
       var b = c.bloco;
-      var campo = null;
-      for(var i=0;i<base.campos.length;i++) if(base.campos[i].id === b.id) campo = base.campos[i];
-      if(!campo){ campo = {id: b.id}; base.campos.push(campo); }
-      campo.nome = campo.nome || b.nome;
-      campo.fonte = b.fonte;
-      campo.data = c.r.ano;
-      Object.keys(c.r.valores).forEach(function(cod){
-        (base.porMunicipio[cod] = base.porMunicipio[cod] || {})[b.id] = c.r.valores[cod];
+      Object.keys(c.porCampo).forEach(function(fid){
+        var valores = c.porCampo[fid];
+        if(!Object.keys(valores).length) return;
+        var campo = null;
+        for(var i=0;i<base.campos.length;i++) if(base.campos[i].id === fid) campo = base.campos[i];
+        if(!campo){ campo = {id: fid}; base.campos.push(campo); }
+        campo.nome  = campo.nome || NOMES_CAMPO_IBGE[fid] || b.nome;
+        campo.fonte = b.fonte;
+        campo.data  = (c.anoPorCampo && c.anoPorCampo[fid]) || c.ano;
+        // Mil reais é a unidade do IBGE para PIB, salários e valor de
+        // lavoura. Guardar em reais evita que alguém leia o número da
+        // tela como se fosse a moeda inteira e erre por mil vezes.
+        var emReais = (b.moeda || []).indexOf(fid) > -1;
+        if(emReais) campo.formato = "moeda";
+        Object.keys(valores).forEach(function(cod){
+          (base.porMunicipio[cod] = base.porMunicipio[cod] || {})[fid] =
+            emReais ? valores[cod] * 1000 : valores[cod];
+        });
       });
     });
     base.ibgeEm = nowISO();
