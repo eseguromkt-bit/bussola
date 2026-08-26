@@ -1361,10 +1361,19 @@ function sha256(msg){
 }
 function hashSenha(usuario, senha){ return sha256("bussola|"+String(usuario).toLowerCase().trim()+"|"+senha); }
 
+/* Três níveis de acesso. A linha que separa Editor de Administrador é
+   uma só, e é a que importa: quem mexe em CONTEÚDO não mexe em GENTE.
+   O Editor cuida da base comercial e acompanha os atendimentos do time;
+   promover, desativar e excluir usuário continua só com o Administrador. */
 var PAPEIS = {
-  admin:    {nome:"Administrador", desc:"Edita todo o conteúdo e gerencia usuários.", pill:"pill-gold"},
+  admin:    {nome:"Administrador", desc:"Edita o conteúdo, acompanha a equipe e controla quem tem acesso.", pill:"pill-gold"},
+  editor:   {nome:"Editor",        desc:"Edita o conteúdo e acompanha a equipe. Não mexe em usuários.", pill:"pill-accent"},
   vendedor: {nome:"Vendedor",      desc:"Usa a base e faz atendimentos. Não edita conteúdo.", pill:"pill-info"}
 };
+var ORDEM_PAPEIS = ["vendedor","editor","admin"];
+function opcoesPapel(){
+  return ORDEM_PAPEIS.map(function(k){ return {v:k, l:PAPEIS[k].nome}; });
+}
 function usuarioAtual(){
   // com a nuvem ligada, quem manda é o perfil que veio do banco
   if(typeof nuvem !== "undefined" && nuvem.ativo) return nuvem.perfil;
@@ -1372,6 +1381,10 @@ function usuarioAtual(){
   return (state.usuarios||[]).filter(function(u){ return u.id===state.sessaoId; })[0] || null;
 }
 function ehAdmin(){ var u=usuarioAtual(); return !!u && u.papel==="admin"; }
+// Quem mexe no conteúdo: administrador e editor.
+function podeEditar(){ var u=usuarioAtual(); return !!u && (u.papel==="admin" || u.papel==="editor"); }
+// Quem enxerga os atendimentos do time inteiro. A mesma dupla: ver não é mexer.
+function podeVerEquipe(){ return podeEditar(); }
 // "primeiro acesso" só existe no modo local: na nuvem, o primeiro que se
 // cadastra vira administrador automaticamente (o banco cuida disso).
 function precisaSetup(){
@@ -1422,11 +1435,11 @@ function activeLead(){
   return null;
 }
 // Atendimentos deste navegador que o usuário logado pode ver.
-// Vendedor vê os seus; administrador vê todos.
+// Vendedor vê os seus; administrador e editor veem todos.
 function meusLeads(){
   var eu = usuarioAtual();
   if(!eu) return [];
-  if(eu.papel==="admin") return state.leads;
+  if(eu.papel==="admin" || eu.papel==="editor") return state.leads;
   return state.leads.filter(function(l){ return !l.donoId || l.donoId===eu.id; });
 }
 
@@ -1811,7 +1824,7 @@ function conteudoDeExemplo(){
 }
 function avisoExemplo(){
   if(!conteudoDeExemplo()) return "";
-  return callout("warn","aviso", ehAdmin()
+  return callout("warn","aviso", podeEditar()
     ? "Estes são <b>dados de exemplo</b>. O conteúdo real ainda não foi carregado no banco — rode o arquivo <b>seed-conteudo.sql</b> no Supabase uma única vez."
     : "Estes são <b>dados de exemplo</b>. Peça ao administrador para carregar o conteúdo da equipe — não cite estes números com um candidato.");
 }
@@ -2156,7 +2169,7 @@ function renderRamoDetalhe(r){
   // Parceiros deste segmento: nome que o candidato reconhece vale mais que
   // adjetivo, então vem cedo na página, logo abaixo do perfil.
   var pcs = parceirosDoRamo(r.id);
-  if(pcs.length || ehAdmin()){
+  if(pcs.length || podeEditar()){
     h += '<div class="section"><div class="section-head"><h2>'+ico("banco",17)+"Parceiros deste segmento"+
       (pcs.length? ' <span class="pill">'+pcs.length+"</span>":"")+"</h2>"+
       '<button class="btn btn-sm" data-action="ir" data-view="parceiros" data-id="'+r.id+'">Ver todos</button></div>';
@@ -2177,7 +2190,7 @@ function renderRamoDetalhe(r){
     h += '<div class="section"><div class="section-head"><h2>'+ico(d.icone||"livro",17)+esc(d.titulo||"Detalhe")+"</h2></div>"+
       '<div class="card"><p style="margin:0;font-size:14.3px;white-space:pre-wrap;">'+esc(d.texto)+"</p></div></div>";
   });
-  if(ehAdmin()){
+  if(podeEditar()){
     h += '<div class="section"><button class="btn btn-sm" data-action="editar-detalhes" data-id="'+r.id+'">'+
       ico("livro",14)+((r.detalhes||[]).length? "Editar os detalhes deste segmento" : "Acrescentar detalhes a este segmento")+"</button></div>";
   }
@@ -2340,7 +2353,7 @@ function renderParceiros(){
 
   if(!todos.length){
     h += '<div class="empty">Nenhum parceiro cadastrado ainda.'+
-      (ehAdmin()? '<br><button class="btn btn-primary" data-action="novo-parceiro">Cadastrar o primeiro</button>':"")+"</div>";
+      (podeEditar()? '<br><button class="btn btn-primary" data-action="novo-parceiro">Cadastrar o primeiro</button>':"")+"</div>";
     document.getElementById("appMain").innerHTML = h;
     return;
   }
@@ -2421,7 +2434,7 @@ function renderProduto(prod){
 
   h += '<div class="section"><div class="section-head"><h2>'+ico("banco",17)+"Parceiros"+
     (pcs.length? ' <span class="pill">'+pcs.length+"</span>":"")+"</h2>"+
-    (ehAdmin()? '<button class="btn btn-sm" data-action="novo-parceiro" data-ramo="'+esc(prod.ramoId)+'" data-produto="'+esc(prod.chave)+'">+ Novo parceiro</button>':"")+"</div>";
+    (podeEditar()? '<button class="btn btn-sm" data-action="novo-parceiro" data-ramo="'+esc(prod.ramoId)+'" data-produto="'+esc(prod.chave)+'">+ Novo parceiro</button>':"")+"</div>";
   if(pcs.length){
     if(herdados) h += callout("info","aviso","Nenhum parceiro foi marcado para <b>"+esc(prod.p)+"</b> especificamente. Estes são os do segmento "+esc(r? r.nome : "")+".");
     h += '<div class="pc-faixa">'+pcs.map(function(pc){
@@ -2440,7 +2453,7 @@ function renderProduto(prod){
       '<div class="card"><p style="margin:0;font-size:14.3px;white-space:pre-wrap;">'+esc(d.texto)+"</p></div></div>";
   });
 
-  if(ehAdmin()){
+  if(podeEditar()){
     h += '<div class="section"><div class="row" style="flex-wrap:wrap;">'+
       '<button class="btn btn-sm" data-action="editar-produto" data-r="'+esc(prod.ramoId)+'" data-i="'+prod.indice+'">'+
         ico("chave",14)+"Editar este subsegmento</button>"+
@@ -2976,7 +2989,7 @@ function renderConfig(){
       '<div class="card row-between" style="flex-wrap:wrap;gap:12px;">'+
       '<div><b>'+esc(eu.nome)+'</b> <span class="pill '+pp.pill+'">'+esc(pp.nome)+"</span>"+
       '<p class="faint" style="margin:4px 0 0;">@'+esc(eu.usuario)+"</p></div>"+
-      '<div class="row">'+(ehAdmin()? '<button class="btn btn-sm" data-action="ir" data-view="adm">Administração</button>':"")+
+      '<div class="row">'+(podeEditar()? '<button class="btn btn-sm" data-action="ir" data-view="adm">Administração</button>':"")+
       '<button class="btn btn-sm btn-danger" data-action="sair">Sair</button></div></div></div>';
   }
 
@@ -3016,14 +3029,14 @@ function renderConfig(){
       '<button class="btn btn-primary" data-action="enviar-relatorio">'+ico("balao",15)+"Enviar relatório ao gestor</button></div></div>";
   }
 
-  if(ehAdmin() && !nuv){
+  if(podeEditar() && !nuv){
     h += '<div class="section"><div class="section-head"><h2>'+ico("chave",17)+'Publicar conteúdo para a equipe</h2></div>'+
       '<div class="card"><p class="muted" style="margin:0 0 10px;max-width:66ch;">As edições feitas em Administração valem <b>neste navegador</b>. Para o time inteiro ver, exporte o conteúdo e me envie o arquivo — eu gero a nova versão do site.</p>'+
       (state.conteudoAtualizadoEm? '<p class="faint" style="margin:0 0 10px;">Última edição de conteúdo: '+fmtDate(state.conteudoAtualizadoEm)+"</p>":
         '<p class="faint" style="margin:0 0 10px;">Nenhuma edição de conteúdo ainda — o app está com os dados originais.</p>')+
       '<button class="btn btn-primary" data-action="exportar-conteudo">'+ico("escala",15)+"Exportar conteúdo .json</button></div></div>";
   }
-  if(ehAdmin() && nuv && state.conteudoAtualizadoEm){
+  if(podeEditar() && nuv && state.conteudoAtualizadoEm){
     h += '<div class="section"><div class="card"><p class="faint" style="margin:0;">Última edição de conteúdo publicada para a equipe: '+fmtDate(state.conteudoAtualizadoEm)+".</p></div></div>";
   }
 
@@ -3231,7 +3244,7 @@ function camposParceiro(){
 var CAMPOS_USUARIO = [
   {id:"nome", rot:"Nome completo"},
   {id:"usuario", rot:"Nome de usuário", dica:"sem espaços"},
-  {id:"papel", rot:"Perfil", tipo:"select", opcoes:[{v:"vendedor",l:"Vendedor"},{v:"admin",l:"Administrador"}]},
+  {id:"papel", rot:"Perfil", tipo:"select", opcoes:opcoesPapel(), dica:"Editor mexe no conteúdo, não em usuários"},
   {id:"ativo", rot:"Situação", tipo:"select", opcoes:[{v:"1",l:"Ativo"},{v:"0",l:"Desativado"}]},
   {id:"senha", rot:"Senha", largo:true, dica:"ao editar, deixe vazio para manter a senha atual"}
 ];
@@ -3239,7 +3252,7 @@ var CAMPOS_USUARIO = [
 // Na nuvem, login e senha são da conta da pessoa — o admin cuida do resto.
 var CAMPOS_USUARIO_NUVEM = [
   {id:"nome", rot:"Nome completo", largo:true},
-  {id:"papel", rot:"Perfil", tipo:"select", opcoes:[{v:"vendedor",l:"Vendedor"},{v:"admin",l:"Administrador"}]},
+  {id:"papel", rot:"Perfil", tipo:"select", opcoes:opcoesPapel(), dica:"Editor mexe no conteúdo, não em usuários"},
   {id:"ativo", rot:"Situação", tipo:"select", opcoes:[{v:"1",l:"Ativo"},{v:"0",l:"Desativado"}],
    dica:"desativado não consegue entrar"}
 ];
@@ -3317,11 +3330,11 @@ function ramosMaisIndicados(leads){
 }
 
 function renderEquipe(){
-  if(!ehAdmin()){
+  if(!podeVerEquipe()){
     document.getElementById("appMain").innerHTML =
       '<div class="topline"><div><div class="eyebrow">Equipe</div>'+
       '<h1 class="page-title">Acesso restrito</h1>'+
-      '<p class="page-sub">O acompanhamento de equipe é do administrador.</p></div></div>'+
+      '<p class="page-sub">O acompanhamento de equipe é do Administrador e do Editor.</p></div></div>'+
       '<div class="empty">Seu perfil é de vendedor.</div>';
     return;
   }
@@ -3456,7 +3469,8 @@ function modalConsultor(id){
    ADMINISTRAÇÃO — CRUD
    ========================================================================= */
 var ADM_ABAS = [
-  {k:"usuarios",  n:"Usuários",   ic:"usuario"},
+  // "so:admin" — a aba de gente é a única que o Editor não vê.
+  {k:"usuarios",  n:"Usuários",   ic:"usuario", so:"admin"},
   {k:"empresa",   n:"Empresa",    ic:"predio"},
   {k:"franquias", n:"Franquias",  ic:"loja"},
   {k:"ramos",     n:"Ramos",      ic:"grade"},
@@ -3488,15 +3502,19 @@ function avisoRestaurar(colecao, rotulo){
 }
 
 function renderAdm(){
-  if(!ehAdmin()){
+  if(!podeEditar()){
     document.getElementById("appMain").innerHTML =
       '<div class="topline"><div><div class="eyebrow">Administração</div>'+
       '<h1 class="page-title">Acesso restrito</h1>'+
-      '<p class="page-sub">Só administradores editam o conteúdo. Fale com quem administra a base.</p></div></div>'+
+      '<p class="page-sub">Editar o conteúdo é do Administrador e do Editor. Fale com quem administra a base.</p></div></div>'+
       '<div class="empty">Seu perfil é de vendedor.</div>';
     return;
   }
-  var aba = ui.admAba || "usuarios";
+  // O Editor não tem a aba de usuários; se ela estava selecionada
+  // (ou se o papel dele mudou agora há pouco), cai numa aba que ele tem.
+  var abas = ADM_ABAS.filter(function(t){ return t.so!=="admin" || ehAdmin(); });
+  var aba = ui.admAba || abas[0].k;
+  if(!abas.some(function(t){ return t.k===aba; })) aba = abas[0].k;
   var h = '<div class="topline"><div><div class="eyebrow">Administração</div>'+
     '<h1 class="page-title">Gerenciar conteúdo</h1>'+
     '<p class="page-sub">'+(naNuvem()
@@ -3504,12 +3522,12 @@ function renderAdm(){
       : "Sem conexão com o banco, a edição vale só neste navegador — e sobe quando a internet voltar.")+"</p></div>"+
     '<button class="btn" data-action="abrir-busca">'+ico("lupa",15)+"Buscar</button></div>";
 
-  h += '<div class="adm-tabs">'+ADM_ABAS.map(function(t){
+  h += '<div class="adm-tabs">'+abas.map(function(t){
     return '<button class="tag-btn'+(aba===t.k?" active":"")+'" data-action="adm-aba" data-k="'+t.k+'">'+
       ico(t.ic,14)+esc(t.n)+"</button>";
   }).join("")+"</div>";
 
-  if(aba==="usuarios")       h += admUsuarios();
+  if(aba==="usuarios")       h += ehAdmin()? admUsuarios() : "";
   else if(aba==="empresa")   h += admEmpresa();
   else if(aba==="franquias") h += admFranquias();
   else if(aba==="ramos")     h += admRamos();
@@ -3529,7 +3547,9 @@ function admUsuarios(){
   var h = '<div class="section-head"><h2>'+ico("usuario",17)+(nuv? "Equipe com acesso" : "Usuários")+"</h2>"+
     '<button class="btn btn-primary btn-sm" data-action="novo-usuario">'+(nuv? "Como adicionar alguém" : "+ Novo usuário")+"</button></div>";
   h += nuv
-    ? callout("accent","escudo","Cada consultor cria a própria conta e entra como <b>Vendedor</b>. Aqui você promove a administrador, desativa o acesso de quem saiu do time e vê quem está ativo. Vale em qualquer computador ou celular.")
+    ? callout("accent","escudo","Cada consultor cria a própria conta e entra como <b>Vendedor</b>. Aqui você muda o nível de acesso, desativa quem saiu do time e vê quem está ativo. Vale em qualquer computador ou celular."+
+        "<br><br><b>Os três níveis:</b> <b>Vendedor</b> usa a base e cuida dos atendimentos dele. <b>Editor</b> edita todo o conteúdo — ramos, comissões, parceiros, rede, indicadores, scripts — e acompanha a equipe, mas não mexe em usuários. <b>Administrador</b> faz tudo isso e controla quem tem acesso."+
+        "<br><br>Mudar o nível de alguém só vale de verdade depois que o <b>papeis-editor.sql</b> tiver rodado no banco: é lá que a regra é cumprida.")
     : callout("warn","aviso","Os usuários existem <b>neste navegador</b>. Para o consultor entrar no computador dele, clique em <b>Convite</b> e envie o arquivo gerado — ele importa na tela de acesso e passa a ter o login, o perfil e o conteúdo atualizado.");
   h += '<div>'+(state.usuarios||[]).map(function(u){
     var p = PAPEIS[u.papel] || PAPEIS.vendedor;
@@ -3987,7 +4007,7 @@ function render(){
   if(mt) mt.textContent = NOMES_VIEW[ui.view] || "Bússola";
 
   // itens de administração só existem para quem é admin
-  var admOk = ehAdmin();
+  var admOk = podeEditar();
   document.querySelectorAll('[data-admin="1"]').forEach(function(b){ b.style.display = admOk? "" : "none"; });
   if(!admOk && (ui.view==="adm" || ui.view==="equipe")) ui.view = "inicio";
   var sb = document.querySelector(".sidebar-search");
@@ -4046,8 +4066,20 @@ function leadModal(l){
   setTimeout(function(){ var e=document.getElementById("mNome"); if(e) e.focus(); },20);
 }
 
+// Ações que só o Administrador dispara. O Editor nem vê estes botões,
+// mas esconder botão não é permissão: a trava fica aqui, antes do switch,
+// e a de verdade fica no RLS do banco (papeis-editor.sql).
+var ACOES_SO_ADMIN = {
+  "novo-usuario":1, "editar-usuario":1, "salvar-usuario":1,
+  "excluir-usuario":1, "gerar-convite":1
+};
+
 function handle(action, el){
   var l;
+  if(ACOES_SO_ADMIN[action] && !ehAdmin()){
+    toast("Só o Administrador mexe em usuários.");
+    return;
+  }
   switch(action){
     case "ir":
       fecharMais();
@@ -5394,7 +5426,7 @@ function renderRede(){
 
   if(!todas.length){
     h += '<div class="empty">Nenhuma franquia cadastrada ainda.'+
-      (ehAdmin()? '<br><button class="btn btn-primary" data-action="ir" data-view="adm" data-aba="rede">Importar a planilha</button>':"")+"</div>";
+      (podeEditar()? '<br><button class="btn btn-primary" data-action="ir" data-view="adm" data-aba="rede">Importar a planilha</button>':"")+"</div>";
     document.getElementById("appMain").innerHTML = h;
     return;
   }
@@ -5482,7 +5514,7 @@ function fichaFranquia(f){
       ? '<div class="diff-list" style="margin-top:11px;">'+f.negocios.map(function(n){
           return '<span class="diff-chip">'+esc(n)+"</span>"; }).join("")+"</div>"
       : '<p class="faint" style="margin:10px 0 0;">Nenhum negócio informado.</p>')+
-    (ehAdmin()? '<div class="row" style="margin-top:12px;">'+
+    (podeEditar()? '<div class="row" style="margin-top:12px;">'+
       '<button class="btn btn-sm" data-action="editar-franquia" data-id="'+esc(f.id)+'">Editar</button></div>' : "")+
   "</div>";
 }
@@ -6226,7 +6258,7 @@ function painelGeo(a){
   h += '<div class="section"><div class="section-head"><h2>'+ico("alvo",17)+"Sinais desta praça</h2></div>";
   if(!a.sinais.length){
     h += '<div class="empty">Ainda não há dados suficientes sobre '+esc(m.nome)+'.'+
-      (ehAdmin()? '<br><button class="btn btn-sm btn-primary" data-action="ir" data-view="adm" data-aba="geo">Importar indicadores</button>':"")+"</div>";
+      (podeEditar()? '<br><button class="btn btn-sm btn-primary" data-action="ir" data-view="adm" data-aba="geo">Importar indicadores</button>':"")+"</div>";
   } else {
     h += '<div class="grid grid-2">'+a.sinais.map(function(s){
       return '<div class="sinal sinal-'+s.forca+'">'+
@@ -6939,7 +6971,7 @@ var nuvem = {
     });
     var passos = [];
     if(meus.length) passos.push(nuvem.sb.from("leads").insert(meus.map(nuvem.paraLinha)));
-    if(m.conteudo && ehAdmin()){
+    if(m.conteudo && podeEditar()){
       Object.keys(m.conteudo).forEach(function(k){
         if(!COLECOES[k]) return;
         passos.push(nuvem.sb.from("conteudo").upsert({
