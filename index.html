@@ -4327,6 +4327,51 @@ function handle(action, el){
       db.set("indicadores", b2); render(); toast("Indicador removido.");
       break;
     }
+    case "abrir-ibge": {
+      var corpo = '<p class="muted" style="margin:0 0 14px;font-size:14px;">'+
+        "Escolha o que baixar. Tudo vem do IBGE, para os 5.570 municípios, com a tabela de origem e o ano."+
+        "</p><div class=\"stack\" style=\"gap:8px;\">"+
+        BLOCOS_IBGE.map(function(b){
+          return '<label class="linha-item" style="cursor:pointer;align-items:flex-start;">'+
+            '<input type="checkbox" class="ibge-op" value="'+b.id+'" checked style="margin:3px 12px 0 0;flex:0 0 auto;">'+
+            '<span class="linha-main"><span class="linha-tit">'+esc(b.nome)+"</span>"+
+            '<span class="linha-sub">'+esc(b.sobre)+"</span>"+
+            '<span class="faint" id="ibge-st-'+b.id+'"></span></span></label>';
+        }).join("")+"</div>"+
+        '<p class="faint" style="margin:14px 0 0;">Importar de novo <b>substitui</b> estes indicadores e mantém os que vieram de planilha, como a frota.</p>'+
+        '<div class="row" style="justify-content:flex-end;margin-top:16px;">'+
+        '<button class="btn" data-action="close-modal">Cancelar</button>'+
+        '<button class="btn btn-primary" data-action="rodar-ibge" id="btIbge">Baixar agora</button></div>';
+      openModal("Importar do IBGE", corpo);
+      break;
+    }
+    case "rodar-ibge": {
+      var escolhidos = [].slice.call(document.querySelectorAll(".ibge-op:checked")).map(function(x){ return x.value; });
+      if(!escolhidos.length) return toast("Escolha ao menos um.");
+      var bt = document.getElementById("btIbge");
+      if(bt){ bt.disabled = true; bt.textContent = "Baixando…"; }
+      document.querySelectorAll(".ibge-op").forEach(function(x){ x.disabled = true; });
+      importarDoIbge(escolhidos, function(id, estado, det){
+        var el = document.getElementById("ibge-st-"+id);
+        if(!el) return;
+        el.textContent = estado==="andando" ? ("baixando… "+det)
+                       : estado==="ok"      ? ("pronto — "+det)
+                                            : ("não veio — "+det);
+        el.style.color = estado==="erro" ? "var(--danger)"
+                       : estado==="ok"   ? "var(--success)" : "var(--ink-faint)";
+      }).then(function(r){
+        closeModal(); render();
+        toast(r.erros.length
+          ? ("Importado, com "+r.erros.length+" pendência(s).")
+          : "Indicadores do IBGE importados.");
+        if(r.erros.length) console.warn("IBGE:", r.erros.join(" · "));
+      }).catch(function(e){
+        if(bt){ bt.disabled = false; bt.textContent = "Tentar de novo"; }
+        document.querySelectorAll(".ibge-op").forEach(function(x){ x.disabled = false; });
+        toast("Não deu: "+(e.message||"erro"));
+      });
+      break;
+    }
     case "limpar-ibge":
       _ibge = {};
       try{ localStorage.removeItem(IBGE_CHAVE); }catch(e){}
@@ -6046,6 +6091,26 @@ var REGRAS_GEO = [
     }
   },
   {
+    // Só entra quando o dado veio do Censo, não de estimativa: casa é
+    // uma apólice por endereço, e o vendedor precisa poder defender o número.
+    id:"domicilios",
+    quando: function(c){ return c.ind.domicilios > 0; },
+    avaliar: function(c){
+      var d = c.ind.domicilios;
+      if(d < 3000) return null;
+      return {
+        forca: d >= 50000 ? "alta" : "média",
+        titulo: "Base residencial para trabalhar",
+        evidencia: fmtNum(d) + " domicílios ocupados" +
+                   (c.ind.densidade > 0 ? " · " + fmtNum(c.ind.densidade) + " hab/km²" : ""),
+        ramos: ["seguros","financeiro"],
+        chaves: ["residencial","resid","casa","imov","consorcio","imobil"],
+        fala: "São " + fmtNum(d) + " domicílios em " + c.m.nome +
+              ". Seguro residencial e consórcio de imóvel trabalham essa base — é venda de porta em porta que não depende de o cliente ter empresa nem carro."
+      };
+    }
+  },
+  {
     id:"porte-grande",
     quando: function(c){ return c.pop >= 200000; },
     avaliar: function(c){
@@ -6371,6 +6436,24 @@ function admGeo(){
 
   h += callout("accent","livro","A planilha precisa de uma coluna com o <b>município</b> (ou o código do IBGE) e uma com a <b>UF</b>. Toda coluna numérica vira um indicador, nomeado pelo próprio cabeçalho. Importar de novo <b>acrescenta ou atualiza</b> colunas, sem apagar as que já existem.");
 
+  // Importar do IBGE — o caminho automático, antes do manual
+  var base0 = INDICADORES();
+  h += '<div class="card" style="margin-bottom:18px;border-color:var(--accent-soft);">'+
+    '<div class="row-between" style="gap:12px;flex-wrap:wrap;align-items:flex-start;">'+
+    '<div><b style="font-size:14px;">'+ico("lupa",15)+' Importar do IBGE, automático</b>'+
+    '<p class="muted" style="margin:6px 0 0;font-size:13.5px;max-width:70ch;">'+
+    "Baixa os 5.570 municípios do país direto do IBGE, sem planilha. "+
+    "Cada número entra com a tabela de origem e o ano. Leva menos de um minuto."+
+    (base0.ibgeEm? '<br><span class="faint">Última importação: '+fmtDate(base0.ibgeEm)+"</span>":"")+
+    "</p></div>"+
+    '<button class="btn btn-primary btn-sm" data-action="abrir-ibge">Importar do IBGE</button></div>'+
+    '<div class="row" style="margin-top:12px;flex-wrap:wrap;gap:6px;">'+
+    BLOCOS_IBGE.map(function(b){
+      var tem = (base0.campos||[]).some(function(c){ return c.id===b.id; });
+      return '<span class="pill '+(tem?"pill-success":"")+'">'+esc(b.nome)+(tem?" ✓":"")+"</span>";
+    }).join("")+"</div>"+
+    '<p class="faint" style="margin:10px 0 0;">Frota de veículos <b>não é do IBGE</b> — é do Senatran, e continua vindo por planilha, logo abaixo.</p></div>';
+
   h += '<div class="card" style="margin-bottom:18px;"><b style="font-size:14px;">Onde baixar</b>'+
     '<ul style="margin:8px 0 0;padding-left:20px;font-size:13.5px;line-height:1.9;">'+
     "<li><b>Frota de veículos por município</b> — Senatran publica planilha por mês em gov.br/transportes, em Estatísticas → Frota de Veículos.</li>"+
@@ -6622,6 +6705,185 @@ function buscarIbge(m){
       if(valor == null) throw new Error("vazio");
       return {populacao: valor, ano: ano};
     });
+}
+
+
+/* ---------------------------------------------------------------------
+   IMPORTAR DO IBGE — os 5.570 municípios de uma vez
+
+   Isto é diferente da consulta ao vivo acima. Lá é uma cidade, em
+   segundo plano, guardada só neste navegador. Aqui é uma ação
+   deliberada de quem administra: baixa o país inteiro e grava na
+   coleção compartilhada, com fonte e ano, para o time todo.
+
+   Os endereços e os formatos abaixo foram conferidos contra a API real
+   do IBGE em 26/08/2026 — não são chute. O que foi visto lá:
+
+   · o CORS é aberto (access-control-allow-origin: *), então dá para
+     chamar direto do navegador, sem servidor no meio;
+   · localidades=N6[all] devolve os 5.570 municípios numa resposta só;
+   · 9514 (idade) com as 9 faixas de uma vez para o país inteiro
+     devolve erro 500 — por isso vai uma faixa por vez;
+   · e o mais importante: os números vêm com PONTO DECIMAL, no formato
+     americano. A área de Curitiba chega como "434.892" e são 434,892
+     km², não 434 mil. Por isso existe numeroIbge() em vez de reusar
+     lerNumero(), que é o leitor de planilha brasileira.
+   --------------------------------------------------------------------- */
+
+var IBGE_API = "https://servicodados.ibge.gov.br/api/v3/agregados/";
+
+// Número como a API do IBGE escreve: ponto é decimal, sempre.
+// Reusar lerNumero() aqui leria 434.892 como quatrocentos e trinta e
+// quatro mil. Não é o mesmo problema da planilha, e não tem o mesmo leitor.
+function numeroIbge(v){
+  if(v == null || v === "" || v === "-" || v === "..." || v === "..") return null;
+  var n = parseFloat(String(v).replace(/\s/g,""));
+  return isFinite(n)? n : null;
+}
+
+// Percorre a resposta do agregado e devolve {codigo: valor} + o ano.
+function lerSeries(json, acumular){
+  var mapa = {}, ano = "";
+  (json || []).forEach(function(v){
+    (v.resultados || []).forEach(function(bloco){
+      (bloco.series || []).forEach(function(s){
+        var anos = Object.keys(s.serie || {}).sort();
+        if(!anos.length) return;
+        var a = anos[anos.length-1];
+        if(a > ano) ano = a;
+        var n = numeroIbge(s.serie[a]);
+        if(n == null) return;
+        var cod = s.localidade.id;
+        mapa[cod] = acumular ? (mapa[cod] || 0) + n : n;
+      });
+    });
+  });
+  return {valores: mapa, ano: ano};
+}
+
+function pegarIbge(caminho){
+  var corta = new Promise(function(_, falha){
+    setTimeout(function(){ falha(new Error("o IBGE demorou demais")); }, 45000);
+  });
+  return Promise.race([fetch(IBGE_API + caminho, {mode:"cors"}), corta])
+    .then(function(r){
+      if(!r.ok) throw new Error("o IBGE respondeu " + r.status);
+      return r.json();
+    });
+}
+
+// As nove faixas de cinco anos que somam "60 anos ou mais". Não existe
+// uma categoria pronta para isso no Censo — tem que somar.
+var FAIXAS_60 = ["93095","93096","93097","93098","49108","49109","60040","60041","6653"];
+
+var BLOCOS_IBGE = [
+  {
+    id: "populacao", nome: "População", fonte: "IBGE — estimativa",
+    sobre: "estimativa mais recente publicada, tabela 6579",
+    peso: 1,
+    buscar: function(){
+      return pegarIbge("6579/periodos/-1/variaveis/9324?localidades=N6[all]")
+        .then(function(j){ return lerSeries(j, false); });
+    }
+  },
+  {
+    id: "idosos", nome: "População 60 anos ou mais", fonte: "IBGE — Censo",
+    sobre: "Censo 2022, tabela 9514 — soma das nove faixas de 60 em diante",
+    peso: 9,
+    buscar: function(aviso){
+      var total = {}, ano = "";
+      // uma faixa por vez: pedir as nove juntas para o país inteiro
+      // derruba a API do IBGE com erro 500.
+      return FAIXAS_60.reduce(function(fila, faixa, i){
+        return fila.then(function(){
+          if(aviso) aviso(i, FAIXAS_60.length);
+          return pegarIbge("9514/periodos/2022/variaveis/93?localidades=N6[all]"+
+                           "&classificacao=2[6794]|287["+faixa+"]|286[113635]")
+            .then(function(j){
+              var r = lerSeries(j, false);
+              if(r.ano > ano) ano = r.ano;
+              Object.keys(r.valores).forEach(function(c){
+                total[c] = (total[c] || 0) + r.valores[c];
+              });
+            });
+        });
+      }, Promise.resolve()).then(function(){ return {valores: total, ano: ano}; });
+    }
+  },
+  {
+    id: "domicilios", nome: "Domicílios", fonte: "IBGE — Censo",
+    sobre: "domicílios particulares permanentes ocupados, Censo 2022, tabela 4712",
+    peso: 1,
+    buscar: function(){
+      return pegarIbge("4712/periodos/2022/variaveis/381?localidades=N6[all]")
+        .then(function(j){ return lerSeries(j, false); });
+    }
+  },
+  {
+    id: "densidade", nome: "Densidade demográfica", fonte: "IBGE — Censo",
+    sobre: "habitantes por km², Censo 2022, tabela 4714",
+    peso: 1,
+    buscar: function(){
+      return pegarIbge("4714/periodos/2022/variaveis/614?localidades=N6[all]")
+        .then(function(j){ return lerSeries(j, false); });
+    }
+  }
+];
+
+function blocoIbge(id){
+  for(var i=0;i<BLOCOS_IBGE.length;i++) if(BLOCOS_IBGE[i].id === id) return BLOCOS_IBGE[i];
+  return null;
+}
+
+/* Baixa os blocos escolhidos e grava na coleção `indicadores`.
+   Nada é gravado antes de tudo terminar: se o quinto pedido falhar,
+   a base fica como estava, em vez de meio atualizada. */
+function importarDoIbge(ids, aoAndar){
+  var base = clonar(INDICADORES());
+  base.campos = base.campos || [];
+  base.porMunicipio = base.porMunicipio || {};
+  var colhido = [], erros = [];
+
+  var fila = ids.reduce(function(p, id){
+    return p.then(function(){
+      var b = blocoIbge(id);
+      if(!b) return;
+      if(aoAndar) aoAndar(id, "andando", "");
+      return b.buscar(function(i, n){
+        if(aoAndar) aoAndar(id, "andando", "parte " + (i+1) + " de " + n);
+      }).then(function(r){
+        var quantos = Object.keys(r.valores).length;
+        if(!quantos) throw new Error("veio vazio");
+        colhido.push({bloco: b, r: r});
+        if(aoAndar) aoAndar(id, "ok", fmtNum(quantos) + " municípios · " + r.ano);
+      }).catch(function(e){
+        erros.push(b.nome + ": " + (e.message || "falhou"));
+        if(aoAndar) aoAndar(id, "erro", e.message || "falhou");
+      });
+    });
+  }, Promise.resolve());
+
+  return fila.then(function(){
+    if(!colhido.length) throw new Error(erros.join(" · ") || "nada foi baixado");
+    colhido.forEach(function(c){
+      var b = c.bloco;
+      var campo = null;
+      for(var i=0;i<base.campos.length;i++) if(base.campos[i].id === b.id) campo = base.campos[i];
+      if(!campo){ campo = {id: b.id}; base.campos.push(campo); }
+      campo.nome = campo.nome || b.nome;
+      campo.fonte = b.fonte;
+      campo.data = c.r.ano;
+      Object.keys(c.r.valores).forEach(function(cod){
+        (base.porMunicipio[cod] = base.porMunicipio[cod] || {})[b.id] = c.r.valores[cod];
+      });
+    });
+    base.ibgeEm = nowISO();
+    db.set("indicadores", base);
+    // o que veio do IBGE agora vale mais que a consulta avulsa guardada antes
+    _ibge = {};
+    try{ localStorage.removeItem(IBGE_CHAVE); }catch(e){}
+    return {blocos: colhido.length, erros: erros};
+  });
 }
 
 /* =========================================================================
