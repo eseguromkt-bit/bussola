@@ -656,6 +656,105 @@
   .acesso-erro[hidden]{display:none;}
   .acesso-card .field{margin-bottom:13px;}
   .acesso-aviso{margin:18px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-faint);text-align:center;}
+  /* ---- campo com olhinho ---- */
+  .campo-senha{position:relative;}
+  .campo-senha input{padding-right:46px;}
+  .olho{
+    position:absolute;right:6px;bottom:5px;width:38px;height:38px;border-radius:11px;
+    border:none;background:transparent;color:var(--ink-faint);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:color .14s, background .14s;
+  }
+  .olho:hover{color:var(--ink);background:var(--paper-sunken);}
+  .olho.aberto{color:var(--accent-strong);}
+
+  /* ---- lembrar login ---- */
+  .acesso-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 4px;flex-wrap:wrap;}
+  .check{position:relative;display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:13.5px;color:var(--ink-soft);font-weight:600;user-select:none;min-height:38px;}
+  /* O input fica por cima da caixa desenhada, do tamanho dela, e só
+     invisível. Escondê-lo com width:0 tira ele da ordem do Tab — a caixa
+     vira algo que só existe para quem usa mouse. */
+  .check input{
+    position:absolute;left:0;top:50%;transform:translateY(-50%);
+    width:19px;height:19px;margin:0;opacity:0;cursor:pointer;
+  }
+  .check-caixa{
+    width:19px;height:19px;border-radius:6px;border:1.5px solid var(--border);background:var(--paper-sunken);
+    flex:0 0 auto;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;
+  }
+  .check-caixa::after{
+    content:"";width:9px;height:5px;border-left:2px solid #fff;border-bottom:2px solid #fff;
+    transform:rotate(-45deg) scale(.4);opacity:0;transition:opacity .15s, transform .15s;margin-top:-2px;
+  }
+  .check input:checked + .check-caixa{background:var(--grad);border-color:transparent;}
+  .check input:checked + .check-caixa::after{opacity:1;transform:rotate(-45deg) scale(1);}
+  .check input:focus-visible + .check-caixa{outline:2px solid var(--accent);outline-offset:2px;}
+
+  /* ---- avisos discretos dentro do formulário ---- */
+  .acesso-dica{
+    display:flex;align-items:center;gap:8px;margin:-6px 0 12px;font-size:12.5px;font-weight:600;
+    color:var(--warning);background:var(--warning-soft);padding:8px 11px;border-radius:10px;
+  }
+  .acesso-dica[hidden]{display:none;}
+
+  /* ---- força da senha, só ao criar conta ---- */
+  .forca{display:flex;gap:4px;margin:-6px 0 12px;}
+  .forca span{height:4px;flex:1;border-radius:99px;background:var(--border);transition:background .2s;}
+  .forca[data-n="1"] span:nth-child(1){background:var(--danger);}
+  .forca[data-n="2"] span:nth-child(-n+2){background:var(--warning);}
+  .forca[data-n="3"] span:nth-child(-n+3){background:var(--accent);}
+  .forca[data-n="4"] span{background:var(--success);}
+  .forca-txt{font-size:12px;color:var(--ink-faint);margin:-8px 0 12px;font-weight:600;}
+
+  /* ---- o erro chama atenção sem gritar ---- */
+  .acesso-erro{animation:tremer .3s;}
+  @keyframes tremer{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-5px);}
+    75%{transform:translateX(5px);}
+  }
+
+  /* ---- botão que mostra que está trabalhando ---- */
+  .btn-carregando{position:relative;color:transparent !important;pointer-events:none;}
+  .btn-carregando::after{
+    content:"";position:absolute;top:50%;left:50%;width:17px;height:17px;margin:-9px 0 0 -9px;
+    border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;
+    animation:girar .6s linear infinite;
+  }
+  @keyframes girar{to{transform:rotate(360deg);}}
+
+  /* ---- o painel de marca ganha vida ---- */
+  .acesso-lado::before{
+    content:"";position:absolute;width:130%;height:130%;top:-15%;left:-15%;
+    background:
+      radial-gradient(28% 28% at 20% 25%, rgba(255,255,255,.28), transparent 70%),
+      radial-gradient(24% 24% at 80% 70%, rgba(117,81,255,.55), transparent 70%);
+    animation:respirar 16s ease-in-out infinite alternate;
+  }
+  @keyframes respirar{
+    from{transform:translate3d(-2%,-1%,0) scale(1);}
+    to{transform:translate3d(3%,2%,0) scale(1.12);}
+  }
+  .acesso-lado-inner > *{animation:subir .5s cubic-bezier(.2,.7,.3,1) both;}
+  .acesso-lado-inner > *:nth-child(2){animation-delay:.06s;}
+  .acesso-lado-inner > *:nth-child(3){animation-delay:.12s;}
+  .acesso-card > *{animation:subir .4s cubic-bezier(.2,.7,.3,1) both;}
+  .acesso-card > *:nth-child(2){animation-delay:.04s;}
+  .acesso-card > *:nth-child(3){animation-delay:.08s;}
+  .acesso-card > *:nth-child(4){animation-delay:.12s;}
+  @keyframes subir{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+
+  /* ---- quem já entrou aqui antes é recebido pelo nome ---- */
+  .acesso-volta{
+    display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:14px;
+    border:1px solid var(--border-soft);border-radius:14px;background:var(--paper-sunken);
+  }
+  .acesso-volta-ini{
+    width:38px;height:38px;border-radius:12px;background:var(--grad);color:#fff;flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;
+  }
+  .acesso-volta b{display:block;font-size:14px;}
+  .acesso-volta span{font-size:12.5px;color:var(--ink-faint);}
+  .acesso-volta button{margin-left:auto;flex:0 0 auto;}
   @media (min-width:900px){
     .acesso-lado{display:flex;}
     .acesso-form{flex:1 1 50%;padding:40px;}
@@ -827,11 +926,13 @@
 
 <div class="acesso" id="acesso" hidden>
   <div class="acesso-form">
-    <form class="acesso-card" id="acessoForm" autocomplete="off">
+    <form class="acesso-card" id="acessoForm" autocomplete="on">
       <div class="acesso-mark" id="acessoMark"></div>
       <h1 class="acesso-titulo" id="acessoTitulo">Entrar</h1>
       <p class="acesso-sub" id="acessoSub">Use o e-mail e a senha da sua conta do Grupo É.</p>
       <div id="acessoCampos"></div>
+      <p class="acesso-dica" id="acCaps" hidden>Caps Lock está ligado.</p>
+      <div class="acesso-linha" id="acessoOpcoes" hidden></div>
       <p class="acesso-erro" id="acessoErro" hidden></p>
       <button class="btn btn-primary btn-block" type="submit" id="acessoBtn" style="margin-top:16px;">Entrar</button>
       <div id="acessoRodape" style="margin-top:10px;" hidden></div>
@@ -957,6 +1058,8 @@
    ÍCONES
    ========================================================================= */
 var ICONS = {
+  olho:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  olhoRiscado:'<path d="M10.6 6.2A9.8 9.8 0 0 1 12 6c6.4 0 10 6 10 6a17 17 0 0 1-3 3.6M6.5 7.6C3.9 9.3 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.5-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M3 3l18 18"/>',
   bussola:'<circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.2 5-5 2.2 2.2-5z"/>',
   painel:'<rect x="3" y="3" width="7" height="9" rx="1.6"/><rect x="14" y="3" width="7" height="5" rx="1.6"/><rect x="14" y="12" width="7" height="9" rx="1.6"/><rect x="3" y="16" width="7" height="5" rx="1.6"/>',
   checklist:'<path d="M10 5.5h10M10 12h10M10 18.5h10"/><path d="M3.6 5.6l1.3 1.3 2.3-2.4"/><path d="M3.6 12.1l1.3 1.3 2.3-2.4"/><path d="M3.6 18.6l1.3 1.3 2.3-2.4"/>',
@@ -3748,10 +3851,84 @@ function admObjecoes(){
 function campo(id, rotulo, tipo, ph, auto){
   return '<label class="field">'+esc(rotulo)+
     '<input type="'+tipo+'" id="'+id+'" placeholder="'+esc(ph||"")+'"'+
-    (auto?' autocomplete="'+auto+'"':' autocomplete="off"')+'></label>';
+    (auto?' autocomplete="'+auto+'" name="'+auto+'"':' autocomplete="off"')+'></label>';
+}
+
+/* Campo de senha com o olhinho.
+   Fica dentro do <label> para o clique no rótulo continuar focando o
+   campo, e o botão é type="button" — sem isso ele envia o formulário. */
+function campoSenha(id, rotulo, ph, auto, dica){
+  return '<label class="field campo-senha">'+esc(rotulo)+
+    '<input type="password" id="'+id+'" placeholder="'+esc(ph||"")+'" autocomplete="'+auto+'" name="'+auto+'">'+
+    '<button type="button" class="olho" data-action="ver-senha" data-alvo="'+id+'" '+
+      'aria-label="Mostrar a senha" title="Mostrar a senha">'+ico("olho",18)+"</button>"+
+    (dica? '<span class="hint">'+esc(dica)+"</span>" : "")+"</label>";
+}
+
+/* ---------------------------------------------------------------------
+   Lembrar quem entrou aqui
+
+   Guarda o LOGIN, nunca a senha. Senha em localStorage é senha em texto
+   puro no disco de um computador que costuma ser compartilhado — e o
+   navegador já faz esse trabalho direito, com criptografia do sistema,
+   desde que o formulário não diga autocomplete="off" (dizia; não diz mais).
+   --------------------------------------------------------------------- */
+var LEMBRAR_CHAVE = "bussola_lembrar";
+function lembrado(){
+  try{ return JSON.parse(localStorage.getItem(LEMBRAR_CHAVE) || "null"); }
+  catch(e){ return null; }
+}
+function guardarLembrado(login, nome){
+  try{
+    if(login) localStorage.setItem(LEMBRAR_CHAVE, JSON.stringify({login:login, nome:nome||"", em:nowISO()}));
+    else localStorage.removeItem(LEMBRAR_CHAVE);
+  }catch(e){}
+}
+function marcouLembrar(){
+  var c = document.getElementById("acLembrar");
+  return !c || c.checked;      // sem a caixa na tela, o padrão é lembrar
+}
+
+// Caps Lock ligado é metade dos "minha senha não funciona".
+function vigiarCapsLock(){
+  var dica = document.getElementById("acCaps");
+  if(!dica) return;
+  ["keyup","keydown"].forEach(function(ev){
+    document.addEventListener(ev, function(e){
+      if(!e.getModifierState) return;
+      var acesso = document.getElementById("acesso");
+      if(!acesso || acesso.hidden) return;
+      dica.hidden = !e.getModifierState("CapsLock");
+    });
+  });
+}
+
+// Força da senha, só na criação de conta. É orientação, não obstáculo:
+// o app não recusa senha fraca, só mostra o que ela é.
+function forcaSenha(s){
+  if(!s) return 0;
+  var n = 0;
+  if(s.length >= 6) n++;
+  if(s.length >= 10) n++;
+  if(/[A-Z]/.test(s) && /[a-z]/.test(s)) n++;
+  if(/\d/.test(s) && /[^A-Za-z0-9]/.test(s)) n++;
+  return Math.min(n, 4);
+}
+var ROTULO_FORCA = ["", "fraca — fácil de adivinhar", "razoável", "boa", "forte"];
+function pintarForca(){
+  var barra = document.getElementById("acForca");
+  var txt = document.getElementById("acForcaTxt");
+  var campo = document.getElementById("acSenha");
+  if(!barra || !campo) return;
+  var n = forcaSenha(campo.value);
+  barra.dataset.n = n;
+  if(txt) txt.textContent = campo.value ? ROTULO_FORCA[n] : "";
 }
 function mostrarAcesso(){
   var el = document.getElementById("acesso");
+  // o cartão de boas-vindas é recriado a cada vez; sem isto ele empilha
+  var velho = el.querySelector(".acesso-volta");
+  if(velho) velho.remove();
   var nuv = naNuvem();
   var criar = nuv && ui.acessoModo === "criar";
   var setup = !nuv && precisaSetup();
@@ -3765,12 +3942,14 @@ function mostrarAcesso(){
       : "Use o e-mail e a senha da sua conta do Grupo É.";
     document.getElementById("acessoBtn").textContent = criar? "Criar conta" : "Entrar";
     document.getElementById("acessoCampos").innerHTML = criar
-      ? campo("acNome","Seu nome completo","text","Ex.: Ana Souza")+
+      ? campo("acNome","Seu nome completo","text","Ex.: Ana Souza","name")+
         campo("acEmail","E-mail","email","voce@grupoe.com.br","email")+
-        campo("acSenha","Senha","password","pelo menos 6 caracteres","new-password")+
-        campo("acSenha2","Repita a senha","password","","new-password")
+        campoSenha("acSenha","Senha","pelo menos 6 caracteres","new-password")+
+        '<div class="forca" id="acForca" data-n="0"><span></span><span></span><span></span><span></span></div>'+
+        '<p class="forca-txt" id="acForcaTxt"></p>'+
+        campoSenha("acSenha2","Repita a senha","","new-password")
       : campo("acEmail","E-mail","email","voce@grupoe.com.br","email")+
-        campo("acSenha","Senha","password","","current-password");
+        campoSenha("acSenha","Senha","","current-password");
     if(rodape){
       rodape.hidden = false;
       rodape.innerHTML = criar
@@ -3785,12 +3964,14 @@ function mostrarAcesso(){
       : "Use seu usuário e senha da equipe de expansão.";
     document.getElementById("acessoBtn").textContent = setup? "Criar administrador" : "Entrar";
     document.getElementById("acessoCampos").innerHTML = setup
-      ? campo("acNome","Seu nome","text","Ex.: Ana Souza")+
-        campo("acUser","Nome de usuário","text","ana")+
-        campo("acSenha","Senha","password","","new-password")+
-        campo("acSenha2","Repita a senha","password","","new-password")
+      ? campo("acNome","Seu nome","text","Ex.: Ana Souza","name")+
+        campo("acUser","Nome de usuário","text","ana","username")+
+        campoSenha("acSenha","Senha","pelo menos 6 caracteres","new-password")+
+        '<div class="forca" id="acForca" data-n="0"><span></span><span></span><span></span><span></span></div>'+
+        '<p class="forca-txt" id="acForcaTxt"></p>'+
+        campoSenha("acSenha2","Repita a senha","","new-password")
       : campo("acUser","Usuário","text","","username")+
-        campo("acSenha","Senha","password","","current-password");
+        campoSenha("acSenha","Senha","","current-password");
     if(rodape){ rodape.hidden = true; rodape.innerHTML = ""; }
     if(extra) extra.hidden = false;
   }
@@ -3839,15 +4020,49 @@ function mostrarAcesso(){
       "<li>"+ico("escudo",18)+"<span>Conteúdo protegido: só quem entra enxerga</span></li>"+
       "</ul></div>";
   }
+  // ---- lembrar o login, e receber pelo nome quem já entrou aqui ----
+  var opc = document.getElementById("acessoOpcoes");
+  var caps = document.getElementById("acCaps");
+  if(caps) caps.hidden = true;
+  var lem = lembrado();
+  var pedeLogin = !offline && !criar && !setup;   // só na tela de entrar
+  if(opc){
+    opc.hidden = !pedeLogin;
+    opc.innerHTML = pedeLogin
+      ? '<label class="check"><input type="checkbox" id="acLembrar"'+(lem?" checked":"")+
+        '><span class="check-caixa"></span>Lembrar meu '+(nuv?"e-mail":"usuário")+"</label>"+
+        '<span class="faint" style="font-size:12.5px;">A senha quem guarda é o navegador</span>'
+      : "";
+  }
+  var campoLogin = document.getElementById(nuv? "acEmail" : "acUser");
+  if(pedeLogin && lem && lem.login && campoLogin){
+    campoLogin.value = lem.login;
+    if(lem.nome){
+      var ini = String(lem.nome).trim().charAt(0).toUpperCase() || "?";
+      var card = document.createElement("div");
+      card.className = "acesso-volta";
+      card.innerHTML = '<span class="acesso-volta-ini">'+esc(ini)+"</span>"+
+        "<div><b>Bem-vindo de volta, "+esc(String(lem.nome).split(" ")[0])+"</b>"+
+        '<span>'+esc(lem.login)+"</span></div>"+
+        '<button type="button" class="btn btn-sm" data-action="esquecer-login">Não sou eu</button>';
+      var campos = document.getElementById("acessoCampos");
+      campos.parentNode.insertBefore(card, campos);
+    }
+  }
+
   document.getElementById("acessoErro").hidden = true;
   document.getElementById("acessoBtn").disabled = false;
+  document.getElementById("acessoBtn").classList.remove("btn-carregando");
   el.hidden = false;
   document.getElementById("app").hidden = true;
   var mt=document.getElementById("mtop"), bn=document.getElementById("bnav");
   if(mt) mt.style.display="none";
   if(bn) bn.style.display="none";
+  vigiarCapsLock();
   setTimeout(function(){
-    var f=document.getElementById((setup||criar)?"acNome":(nuv?"acEmail":"acUser"));
+    // se o login já veio lembrado, o que falta digitar é a senha
+    var f = document.getElementById((setup||criar)? "acNome" : (nuv? "acEmail" : "acUser"));
+    if(f && f.value) f = document.getElementById("acSenha");
     if(f) f.focus();
   },30);
 }
@@ -3892,6 +4107,7 @@ function submeterAcesso(e){
   u.ultimoAcesso = nowISO();
   state.sessaoId = u.id;
   if(!state.consultorNome) state.consultorNome = u.nome;
+  guardarLembrado(marcouLembrar()? user : null, u.nome);
   saveStateNow(); entrarApp();
   toast("Olá, "+u.nome.split(" ")[0]+".");
 }
@@ -3914,9 +4130,9 @@ function submeterAcessoNuvem(){
   }
 
   btn.disabled = true;
+  btn.classList.add("btn-carregando");
   document.getElementById("acessoErro").hidden = true;
   var txtOriginal = btn.textContent;
-  btn.textContent = criar? "Criando…" : "Entrando…";
 
   var passo = criar ? nuvem.criarConta(nome, email, senha) : nuvem.entrar(email, senha);
   passo.then(function(r){
@@ -3928,12 +4144,13 @@ function submeterAcessoNuvem(){
     }
     nuvem.guardarParaMigrar();
     return nuvem.abrirSessao(sessao).then(function(){
+      guardarLembrado(marcouLembrar()? email : null, nuvem.perfil && nuvem.perfil.nome);
       saveStateNow();
       entrarApp();
       toast("Olá, "+String(nuvem.perfil.nome).split(" ")[0]+".");
     });
   }).catch(function(err){
-    btn.disabled = false; btn.textContent = txtOriginal;
+    btn.disabled = false; btn.classList.remove("btn-carregando"); btn.textContent = txtOriginal;
     var m = String((err && err.message) || "");
     if(m === "confirme-email")
       return erroAcesso("Conta criada. Confirme o e-mail que você recebeu e depois entre por aqui.");
@@ -4612,6 +4829,29 @@ function handle(action, el){
       mostrarAcesso();
       break;
 
+    case "ver-senha": {
+      var alvoS = document.getElementById(el.dataset.alvo);
+      if(!alvoS) return;
+      var vendo = alvoS.type === "text";
+      alvoS.type = vendo ? "password" : "text";
+      el.classList.toggle("aberto", !vendo);
+      el.innerHTML = ico(vendo ? "olho" : "olhoRiscado", 18);
+      el.setAttribute("aria-label", vendo ? "Mostrar a senha" : "Esconder a senha");
+      el.setAttribute("title", vendo ? "Mostrar a senha" : "Esconder a senha");
+      // o cursor volta para o fim, senão some do lugar onde a pessoa estava
+      alvoS.focus();
+      try{ alvoS.setSelectionRange(alvoS.value.length, alvoS.value.length); }catch(e){}
+      break;
+    }
+
+    case "esquecer-login": {
+      guardarLembrado(null);
+      var cmp = document.getElementById("acEmail") || document.getElementById("acUser");
+      if(cmp) cmp.value = "";
+      mostrarAcesso();
+      break;
+    }
+
     case "continuar-offline":
       state.sessaoId = state.ultimaSessaoNuvem || state.sessaoId;
       saveStateNow();
@@ -5074,6 +5314,9 @@ function onBind(e){
   setPath(l, el.dataset.bind, el.value);
   l.atualizadoEm = nowISO(); scheduleSave();
 }
+document.addEventListener("input", function(e){
+  if(e.target && e.target.id === "acSenha") pintarForca();
+});
 document.addEventListener("input", onBind);
 document.addEventListener("change", onBind);
 
