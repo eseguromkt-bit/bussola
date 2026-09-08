@@ -4150,6 +4150,12 @@ function admPipeline(){
     "<br>· <code>CONTROLEAD_LISTA</code> e <code>CONTROLEAD_CAMPOS</code> — opcionais, quando os "+
     "nomes dos campos não baterem"+
     "<br><br>Ver o arquivo <b>supabase/functions/controlead/COMO-PUBLICAR.md</b>.");
+  h += '<div class="row" style="margin-top:12px;">'+
+    '<button class="btn" data-action="testar-controlead">'+ico("lupa",14)+"Testar a ligação</button></div>";
+  h += '<p class="faint" style="margin-top:8px;font-size:12.5px;">'+
+    "O teste mostra <b>os nomes</b> dos campos e das etapas que o Controlead devolveu — "+
+    "nunca os valores. Nenhum nome ou telefone de candidato aparece, então dá para copiar "+
+    "esse resultado e mandar para quem estiver ajudando a configurar.</p>";
   return h;
 }
 
@@ -5173,6 +5179,7 @@ function handle(action, el){
                    : "Colunas salvas.");
       break;
     }
+    case "testar-controlead": diagnosticoControlead(); break;
     case "pipe-salvar-depara": {
       var pd = clonar(PIPELINE());
       pd.dePara = pd.dePara || {};
@@ -7610,10 +7617,45 @@ function puxarControlead(){
   });
 }
 
+// Pergunta ao Controlead como ele é, não o que ele tem. A resposta traz
+// nomes de campo e de etapa — nunca valores — então pode ser copiada e
+// mandada para quem estiver ajudando sem expor candidato nenhum.
+function diagnosticoControlead(){
+  if(typeof nuvem === "undefined" || !nuvem.ativo){
+    toast("Precisa estar conectado ao Supabase."); return;
+  }
+  toast("Perguntando ao Controlead…");
+  nuvem.sb.functions.invoke("controlead", {body: {diagnostico: true, paginas: 1}}).then(function(r){
+    if(r.error) return lerErroFuncao(r.error).then(function(i){ throw i; });
+    if(r.data && r.data.erro) throw {tipo: r.data.erro, dica: r.data.detalhe, chaves: r.data.chaves};
+    var d = r.data || {};
+    if(d.etapasDoCrm && d.etapasDoCrm.length) ui.etapasCrm = d.etapasDoCrm;
+    var linhas = [
+      ["Versão que funcionou", d.versao || "—"],
+      ["Leads que vieram", String(d.quantosLeads == null ? "—" : d.quantosLeads)],
+      ["Campos que o Controlead manda", (d.camposDoCrm||[]).join(", ") || "—"],
+      ["Etapas cadastradas lá", (d.etapasDoCrm||[]).join(" · ") || "—"],
+      ["Campos que chegaram preenchidos", (d.primeiroCampoPreenchido||[]).join(", ") || "—"]
+    ];
+    var texto = linhas.map(function(l){ return l[0]+": "+l[1]; }).join("\n");
+    openModal("Ligação com o Controlead",
+      '<p class="muted" style="margin:0 0 12px;">Só nomes de campo e de etapa. '+
+      "Nenhum nome, telefone ou e-mail de candidato — dá para copiar e mandar.</p>"+
+      '<table class="tbl"><tbody>'+linhas.map(function(l){
+        return "<tr><td><b>"+esc(l[0])+"</b></td><td>"+esc(l[1])+"</td></tr>";
+      }).join("")+"</tbody></table>"+
+      '<div class="row" style="justify-content:flex-end;margin-top:14px;">'+
+      copiaBtn(texto,"Copiar")+
+      '<button class="btn" data-action="close-modal">Fechar</button></div>');
+    render();
+  }).catch(function(info){ toast(erroControlead(info)); });
+}
+
 function erroControlead(info){
   var t = (info && info.tipo) || "rede";
   if(t === "nao-publicada") return "A função controlead ainda não foi publicada no Supabase.";
-  if(t === "sem-configuracao") return "Faltam os segredos do Controlead no Supabase: " + (info.dica||"");
+  if(t === "sem-configuracao") return "Faltam segredos do Controlead no Supabase. " + (info.dica||"");
+  if(t === "api") return info.dica || "O Controlead respondeu com erro.";
   if(t === "token") return "O Controlead recusou o token. Ele foi trocado?";
   if(t === "limite") return "O Controlead pediu para esperar. Tente daqui a pouco.";
   if(t === "vazio") return "A resposta veio sem lista de leads" +
