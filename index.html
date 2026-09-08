@@ -927,6 +927,14 @@
     .grid-stats{grid-template-columns:1fr 1fr;}
   }
 
+  /* Texto que só o leitor de tela lê. A caixa de seleção da tabela de
+     Telas não tem rótulo visível — a coluna já diz o que é —, mas quem
+     navega por áudio ouviria só "caixa de seleção" sem isto. */
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+
   /* Campo pequeno, para dentro de tabela de administração. */
   .inp-sm{
     font:inherit;font-size:12.5px;padding:5px 8px;border-radius:10px;
@@ -1418,6 +1426,55 @@ var PIPELINE_BASE = {
   dePara: {}
 };
 
+/* -------------------------------------------------------------------------
+   O QUE CADA NÍVEL VÊ
+
+   Isto é ORGANIZAÇÃO DE TELA, não permissão — e a diferença importa.
+   Esconder um botão tira a tela do caminho de quem não precisa dela
+   agora; não impede ninguém de chegar nos dados por outro caminho. Quem
+   cumpre regra é o RLS do banco.
+
+   Serve para o que o Rafael pediu: guardar uma área que ainda está sendo
+   ajustada, sem tirar do ar nada que a equipe já produziu. Esconder a
+   Pipeline não encosta em lead nenhum — os atendimentos continuam
+   inteiros no lugar de sempre.
+   ------------------------------------------------------------------------- */
+var TELAS_OCULTAVEIS = [
+  {v:"pipeline",    n:"Pipeline"},
+  {v:"grupo",       n:"O Grupo É"},
+  {v:"franquias",   n:"Franquias"},
+  {v:"ramos",       n:"Ramos e segmentos"},
+  {v:"parceiros",   n:"Parceiros"},
+  {v:"rede",        n:"Mapa da rede"},
+  {v:"geo",         n:"Raio-X da cidade"},
+  {v:"comissoes",   n:"Comissões"},
+  {v:"calculadora", n:"Calculadora"},
+  {v:"scripts",     n:"Scripts e objeções"}
+];
+// Estas três nunca se escondem: sem elas a pessoa não trabalha nem sai.
+var TELAS_FIXAS = ["inicio", "atendimento", "config"];
+
+var VISIBILIDADE_BASE = {vendedor:{}, editor:{}};
+
+function VISIBILIDADE(){
+  var v = db.get("visibilidade") || {};
+  return {vendedor: v.vendedor || {}, editor: v.editor || {}};
+}
+// O administrador vê tudo, sempre. Se ele pudesse esconder uma tela de si
+// mesmo, escondê-la-ia a de Administração e ficaria sem como desfazer.
+function podeVerTela(view){
+  if(!view || TELAS_FIXAS.indexOf(view) > -1) return true;
+  var u = usuarioAtual();
+  if(!u || u.papel === "admin") return true;
+  var regras = VISIBILIDADE()[u.papel];
+  if(!regras) return true;
+  return regras[view] !== false;
+}
+function telasEscondidas(papel){
+  var regras = VISIBILIDADE()[papel] || {};
+  return TELAS_OCULTAVEIS.filter(function(t){ return regras[t.v] === false; });
+}
+
 function PIPELINE(){
   var p = db.get("pipeline") || {};
   if(!p.colunas || !p.colunas.length) return PIPELINE_BASE;
@@ -1482,6 +1539,7 @@ var COLECOES = {
   indicadores:   {base:function(){ return INDICADORES_BASE; },    tipo:"objeto"},
   geoConfig:     {base:function(){ return GEOCONFIG_BASE; },      tipo:"objeto"},
   pipeline:      {base:function(){ return PIPELINE_BASE; },       tipo:"objeto"},
+  visibilidade:  {base:function(){ return VISIBILIDADE_BASE; },   tipo:"objeto"},
   divergencia:   {base:function(){ return DIVERGENCIA_BASE; },    tipo:"objeto"}
 };
 
@@ -1904,6 +1962,9 @@ function buscar(termo){
     if(it.tipo==="Ramo") score += 25;                // segmentos primeiro, como pedido
     else if(it.tipo==="Produto") score += 18;
     else if(it.tipo==="Modelo" || it.tipo==="Franquia focada") score += 12;
+    // Resultado que leva a uma tela guardada não aparece: oferecer e
+    // depois recusar é pior do que não oferecer.
+    if(it.acao && it.acao.view && !podeVerTela(it.acao.view)) return;
     it._s = score; out.push(it);
   });
   out.sort(function(a,b){ return b._s - a._s || a.titulo.localeCompare(b.titulo); });
@@ -3990,7 +4051,8 @@ var ADM_ABAS = [
   {k:"comissoes", n:"Comissões",  ic:"dinheiro"},
   {k:"scripts",   n:"Scripts",    ic:"balao"},
   {k:"objecoes",  n:"Objeções",   ic:"escudo"},
-  {k:"pipeline",  n:"Pipeline",   ic:"escala"}
+  {k:"pipeline",  n:"Pipeline",   ic:"escala"},
+  {k:"telas",     n:"Telas",      ic:"olho", so:"admin"}
 ];
 
 function linhaItem(titulo, sub, acoes, extra){
@@ -4049,6 +4111,7 @@ function renderAdm(){
   else if(aba==="scripts")   h += admScripts();
   else if(aba==="objecoes")  h += admObjecoes();
   else if(aba==="pipeline")  h += admPipeline();
+  else if(aba==="telas")     h += admTelas();
 
   document.getElementById("appMain").innerHTML = h;
 }
@@ -4061,6 +4124,66 @@ function renderAdm(){
    falar duas línguas. Quem olha o CRM e quem olha a Bússola tem que ver
    o mesmo nome de etapa, senão a reunião de pipeline vira tradução.
    ------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------
+   Administração → Telas
+
+   Guardar uma área que ainda está sendo ajustada, sem tirar do ar o que a
+   equipe já produziu. É de administrador porque decide o que a equipe vê.
+   ------------------------------------------------------------------------- */
+function admTelas(){
+  var vis = VISIBILIDADE();
+  var h = '<div class="section-head"><h2>'+ico("olho",17)+"O que cada nível vê</h2></div>";
+  h += avisoRestaurar("visibilidade","o que cada nível vê");
+
+  h += callout("warn","aviso",
+    "<b>Isto organiza a tela, não é permissão.</b> Guardar uma área tira ela do caminho de "+
+    "quem não precisa dela agora — não é um cofre. Quem cumpre regra de acesso é o banco: "+
+    "as comissões e o roteiro só chegam a quem fez login, e cada vendedor só enxerga os "+
+    "atendimentos dele. Use isto para o que é: esconder o que ainda está sendo ajustado.");
+
+  h += callout("accent","checklist",
+    "Guardar uma área <b>não apaga nada</b>. Os atendimentos, as anotações e as mensagens "+
+    "que a equipe criou continuam onde estão, e voltam a aparecer no instante em que você "+
+    "reabrir a área. <b>Início</b>, <b>Atendimento ao vivo</b> e <b>Configurações</b> não "+
+    "podem ser guardadas — sem elas ninguém trabalha nem sai da conta.");
+
+  h += '<div style="overflow-x:auto;"><table class="tbl"><thead><tr>'+
+    "<th>Área</th>"+
+    '<th style="text-align:center;">Vendedor</th>'+
+    '<th style="text-align:center;">Editor</th>'+
+    "</tr></thead><tbody>"+
+    TELAS_OCULTAVEIS.map(function(t){
+      return "<tr><td>"+esc(t.n)+"</td>"+
+        ["vendedor","editor"].map(function(papel){
+          var ve = (vis[papel]||{})[t.v] !== false;
+          return '<td style="text-align:center;">'+
+            '<label class="check" style="justify-content:center;margin:0;">'+
+            '<input type="checkbox" data-tela="'+esc(t.v)+'" data-papel="'+papel+'"'+
+            (ve?" checked":"")+'>'+
+            '<span class="check-caixa"></span>'+
+            '<span class="sr-only">'+esc(t.n)+" para "+papel+"</span></label></td>";
+        }).join("")+
+      "</tr>";
+    }).join("")+"</tbody></table></div>";
+
+  h += '<div class="row" style="margin-top:12px;">'+
+    '<button class="btn btn-primary" data-action="telas-salvar">'+ico("ok",14)+"Salvar</button>"+
+    '<button class="btn" data-action="telas-tudo">'+ico("olho",14)+"Reabrir todas</button></div>";
+
+  // O que está guardado agora, escrito por extenso — para ninguém esquecer
+  // que escondeu algo três meses atrás.
+  var resumo = ["vendedor","editor"].map(function(papel){
+    var fora = telasEscondidas(papel);
+    if(!fora.length) return null;
+    return "<b>"+(papel === "vendedor" ? "Vendedor" : "Editor")+"</b> não vê: "+
+      fora.map(function(t){ return esc(t.n); }).join(", ")+".";
+  }).filter(Boolean);
+  if(resumo.length){
+    h += '<hr class="sep">'+callout("info","olhoRiscado", resumo.join("<br>"));
+  }
+  return h;
+}
+
 function admPipeline(){
   var p = PIPELINE();
   var colunas = p.colunas || [];
@@ -4832,10 +4955,7 @@ function render(){
   var mt = document.getElementById("mtopTitle");
   if(mt) mt.textContent = NOMES_VIEW[ui.view] || "Bússola";
 
-  // itens de administração só existem para quem é admin
-  var admOk = podeEditar();
-  document.querySelectorAll('[data-admin="1"]').forEach(function(b){ b.style.display = admOk? "" : "none"; });
-  if(!admOk && (ui.view==="adm" || ui.view==="equipe")) ui.view = "inicio";
+  if(!podeEditar() && (ui.view==="adm" || ui.view==="equipe")) ui.view = "inicio";
   var sb = document.querySelector(".sidebar-search");
   if(sb && !sb.querySelector(".ico-svg")){
     sb.insertAdjacentHTML("afterbegin", ico("lupa",15));
@@ -4857,6 +4977,11 @@ function render(){
   if(eu) document.getElementById("sidebarFoot").insertAdjacentHTML("beforeend", '<div class="selo" id="selo"></div>');
   atualizarSelo();
 
+  // Se a tela onde a pessoa está foi escondida enquanto ela usava, ela
+  // volta para o Início em vez de ficar olhando uma página que o
+  // administrador acabou de guardar.
+  if(!podeVerTela(ui.view)) ui.view = "inicio";
+
   var v = ui.view;
   if(v==="atendimento") renderAtendimento();
   else if(v==="pipeline") renderPipeline();
@@ -4873,7 +4998,27 @@ function render(){
   else if(v==="adm") renderAdm();
   else if(v==="config") renderConfig();
   else renderInicio();
+  esconderTelasGuardadas();
   window.scrollTo({top:0});
+}
+
+// Uma varredura no fim do render, e não uma lista de lugares para lembrar
+// de mexer. O menu não é a única porta: o Início tem atalhos, as páginas
+// têm botões que levam umas às outras, e a barra do celular tem a dela.
+// Esconder tela item por item seria esquecer um — e o que passa
+// despercebido não é o botão, é a confiança de que a tela está guardada.
+function esconderTelasGuardadas(){
+  var admOk = podeEditar();
+  // Duas regras decidem se um botão aparece, e as duas moram AQUI. Já
+  // estavam em lugares diferentes uma vez: a varredura nova passava por
+  // cima do display e devolvia Administração para o vendedor. Regra de
+  // visibilidade espalhada é regra que uma desfaz a outra.
+  document.querySelectorAll("[data-view], [data-admin]").forEach(function(el){
+    var v = el.dataset.view;
+    var esconder = (el.dataset.admin === "1" && !admOk) || (v && !podeVerTela(v));
+    el.hidden = !!esconder;
+    el.style.display = esconder ? "none" : "";
+  });
 }
 
 function leadModal(l){
@@ -4909,6 +5054,12 @@ function handle(action, el){
   }
   switch(action){
     case "ir":
+      // O botão sumiu da tela, mas quem chegar aqui por outro caminho —
+      // um atalho antigo, o teclado, o console — não passa.
+      if(!podeVerTela(el.dataset.view)){
+        toast("Essa área está guardada pelo administrador no momento.");
+        return;
+      }
       fecharMais();
       // sair da área de ramos fecha o subsegmento aberto, senão ele
       // reaparece quando a pessoa volta
@@ -5179,6 +5330,20 @@ function handle(action, el){
                    : "Colunas salvas.");
       break;
     }
+    case "telas-salvar": {
+      var vt = {vendedor:{}, editor:{}};
+      document.querySelectorAll("[data-tela]").forEach(function(cx){
+        if(!cx.checked) vt[cx.dataset.papel][cx.dataset.tela] = false;
+      });
+      db.set("visibilidade", vt); render();
+      var quantas = Object.keys(vt.vendedor).length + Object.keys(vt.editor).length;
+      toast(quantas? (quantas+" área(s) guardada(s). Nada foi apagado.") : "Todas as áreas abertas.");
+      break;
+    }
+    case "telas-tudo":
+      db.set("visibilidade", {vendedor:{}, editor:{}});
+      render(); toast("Todas as áreas voltaram a aparecer.");
+      break;
     case "testar-controlead": diagnosticoControlead(); break;
     case "pipe-salvar-depara": {
       var pd = clonar(PIPELINE());
