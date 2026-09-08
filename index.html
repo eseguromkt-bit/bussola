@@ -927,6 +927,66 @@
     .grid-stats{grid-template-columns:1fr 1fr;}
   }
 
+  /* Campo pequeno, para dentro de tabela de administração. */
+  .inp-sm{
+    font:inherit;font-size:12.5px;padding:5px 8px;border-radius:10px;
+    background:var(--paper-raised);color:var(--ink);
+    border:1px solid var(--border);max-width:100%;
+  }
+  .inp-sm:focus{border-color:var(--accent);box-shadow:var(--ring);outline:none;}
+
+  /* ---------------------------------------------------------------
+     PIPELINE
+
+     Colunas que rolam na horizontal, e só elas: o corpo da página
+     nunca anda de lado. Cada coluna rola sozinha na vertical, senão
+     uma coluna com 80 cards empurraria a página inteira para baixo.
+     --------------------------------------------------------------- */
+  .pipe-wrap{overflow-x:auto;padding:2px 2px 12px;margin-top:18px;
+             scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+  .pipe{display:flex;gap:13px;align-items:flex-start;min-width:min-content;}
+  .pipe-col{flex:0 0 262px;background:var(--paper-sunken);
+            border:1px solid var(--border-soft);border-radius:var(--radius-md);
+            display:flex;flex-direction:column;max-height:68vh;}
+  .pipe-col.alvo{border-color:var(--accent);box-shadow:var(--ring);}
+  .pipe-head{padding:11px 13px;border-bottom:1px solid var(--border-soft);
+             display:flex;align-items:center;gap:9px;position:sticky;top:0;
+             background:var(--paper-sunken);border-radius:var(--radius-md) var(--radius-md) 0 0;z-index:1;}
+  .pipe-nome{font-family:var(--font-display);font-weight:700;font-size:13px;flex:1;min-width:0;
+             overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);}
+  .pipe-qtd{font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink-faint);
+            background:var(--paper-raised);border:1px solid var(--border-soft);
+            border-radius:20px;padding:1px 9px;}
+  /* Coluna vazia com altura de coluna: um quadro em que as colunas têm
+     alturas diferentes não parece um quadro, parece uma lista torta. */
+  .pipe-corpo{padding:11px;display:flex;flex-direction:column;gap:9px;
+              overflow-y:auto;min-height:132px;}
+  .pipe-vazio{font-size:12px;color:var(--ink-faint);text-align:center;padding:16px 6px;}
+  .pipe-card{background:var(--paper-raised);border:1px solid var(--border-soft);
+             border-radius:var(--radius-sm);padding:10px 11px;cursor:grab;
+             display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow-sm);}
+  .pipe-card:hover{border-color:var(--accent);}
+  .pipe-card:focus-visible{outline:none;box-shadow:var(--ring);}
+  .pipe-card.arrastando{opacity:.4;cursor:grabbing;}
+  .pipe-card-nome{font-weight:650;font-size:13.5px;line-height:1.25;color:var(--ink);}
+  .pipe-card-sub{font-size:11.5px;color:var(--ink-faint);
+                 overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pipe-tags{display:flex;flex-wrap:wrap;gap:4px;}
+  .pipe-tag{font-size:10px;letter-spacing:.02em;padding:1px 7px;border-radius:20px;
+            background:var(--paper-sunken);color:var(--ink-faint);}
+  .pipe-tag-crm{background:var(--accent-soft);color:var(--accent-strong);}
+  .pipe-tag-fila{background:var(--gold-soft);color:var(--gold);font-weight:650;}
+  .pipe-mover{font-size:11px;padding:3px 5px;border-radius:8px;width:100%;
+              background:var(--paper-sunken);color:var(--ink-faint);
+              border:1px solid var(--border-soft);font-family:inherit;}
+  .pipe-atraso{color:var(--danger);font-weight:650;}
+  .pipe-legenda{font-size:12px;color:var(--ink-faint);margin:10px 0 0;}
+
+  @media (max-width:640px){
+    .pipe-col{flex-basis:80vw;max-height:none;}
+    .pipe-corpo{max-height:50vh;}
+  }
+
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:.001ms !important;transition-duration:.001ms !important;}
   }
@@ -973,6 +1033,7 @@
     <nav class="nav" id="nav">
       <button class="nav-btn" data-action="ir" data-view="inicio" data-ic="painel"><span>Início</span></button>
       <button class="nav-btn" data-action="ir" data-view="atendimento" data-ic="checklist"><span>Atendimento ao vivo</span></button>
+      <button class="nav-btn" data-action="ir" data-view="pipeline" data-ic="escala"><span>Pipeline</span></button>
       <div class="nav-sep">Base de conhecimento</div>
       <button class="nav-btn" data-action="ir" data-view="grupo" data-ic="predio"><span>O Grupo É</span></button>
       <button class="nav-btn" data-action="ir" data-view="franquias" data-ic="loja"><span>Franquias</span></button>
@@ -1012,6 +1073,7 @@
     <div class="sheet-head"><b>Mais seções</b>
       <button class="modal-close" data-action="fechar-mais" aria-label="Fechar">&times;</button></div>
     <div class="sheet-list">
+      <button class="sheet-item" data-action="ir" data-view="pipeline" data-ic="escala"><span>Pipeline</span></button>
       <button class="sheet-item" data-action="ir" data-view="grupo" data-ic="predio"><span>O Grupo É</span></button>
       <button class="sheet-item" data-action="ir" data-view="franquias" data-ic="loja"><span>Franquias</span></button>
       <button class="sheet-item" data-action="ir" data-view="parceiros" data-ic="banco"><span>Parceiros</span></button>
@@ -1322,17 +1384,71 @@ var ESTRUTURA_REUNIAO = [
   {t:"50–60 min", e:"Próximo passo", o:"Definir ação, responsável e data."}
 ];
 
-var STATUS_LIST = [
-  {key:"Novo lead", pill:"pill-info"},
-  {key:"Contato iniciado", pill:"pill-info"},
-  {key:"Qualificação", pill:"pill-info"},
-  {key:"Apresentação", pill:"pill-accent"},
-  {key:"Análise", pill:"pill-accent"},
-  {key:"Proposta", pill:"pill-gold"},
-  {key:"Aprovação", pill:"pill-gold"},
-  {key:"Fechado", pill:"pill-success"},
-  {key:"Perdido", pill:"pill-danger"}
-];
+/* -------------------------------------------------------------------------
+   A PIPELINE
+
+   As colunas eram uma lista fixa no código. Agora vêm do banco, porque o
+   Controlead tem as etapas dele e não faz sentido a equipe falar duas
+   línguas: quem olha o CRM e quem olha a Bússola tem que ver o mesmo
+   nome. O administrador acerta os nomes uma vez, em Administração.
+
+   Campos de cada coluna:
+     key      nome que aparece, e que fica gravado no lead
+     pill     cor da etiqueta
+     etapaMin quantas etapas do atendimento promovem o lead para cá
+              sozinho (sem isso o vendedor teria que mover à mão o que o
+              próprio roteiro já disse)
+     fim      "ganho" ou "perdido" — é o que separa carteira ativa de
+              histórico nos números do Início e da Equipe
+   ------------------------------------------------------------------------- */
+var PIPELINE_BASE = {
+  colunas: [
+    {key:"Novo lead",        pill:"pill-info"},
+    {key:"Contato iniciado", pill:"pill-info"},
+    {key:"Qualificação",     pill:"pill-info",    etapaMin:3},
+    {key:"Apresentação",     pill:"pill-accent",  etapaMin:5},
+    {key:"Análise",          pill:"pill-accent",  etapaMin:9},
+    {key:"Proposta",         pill:"pill-gold",    etapaMin:11},
+    {key:"Aprovação",        pill:"pill-gold"},
+    {key:"Fechado",          pill:"pill-success", fim:"ganho"},
+    {key:"Perdido",          pill:"pill-danger",  fim:"perdido"}
+  ],
+  // "Etapa como o Controlead chama" -> "Coluna como a Bússola chama".
+  // Só é preciso preencher o que não bate por nome igual.
+  dePara: {}
+};
+
+function PIPELINE(){
+  var p = db.get("pipeline") || {};
+  if(!p.colunas || !p.colunas.length) return PIPELINE_BASE;
+  return p;
+}
+function STATUS_LIST(){ return PIPELINE().colunas; }
+function colunaStatus(chave){
+  var L = STATUS_LIST();
+  for(var i=0;i<L.length;i++) if(L[i].key === chave) return L[i];
+  return null;
+}
+function statusInicial(){ return (STATUS_LIST()[0] || {}).key || "Novo lead"; }
+function ehGanho(st){ var c = colunaStatus(st); return !!c && c.fim === "ganho"; }
+function ehPerdido(st){ var c = colunaStatus(st); return !!c && c.fim === "perdido"; }
+// "Aberto" é tudo que não terminou. Um status que não existe mais na
+// configuração conta como aberto: sumiu a coluna, o lead não sumiu.
+function ehAberto(st){ return !ehGanho(st) && !ehPerdido(st); }
+
+// Traduz a etapa do Controlead para a coluna daqui. Primeiro o de-para
+// escrito à mão, depois o nome igual (sem acento e sem caixa), e por
+// último a primeira coluna — lead que chega sem etapa é lead novo.
+function colunaDoControlead(etapa){
+  if(!etapa) return statusInicial();
+  var p = PIPELINE(), dp = p.dePara || {};
+  if(dp[etapa]) return dp[etapa];
+  var alvo = normalizar(etapa);
+  var L = STATUS_LIST();
+  for(var i=0;i<L.length;i++) if(normalizar(L[i].key) === alvo) return L[i].key;
+  for(var k in dp) if(normalizar(k) === alvo) return dp[k];
+  return statusInicial();
+}
 
 /* =========================================================================
    ESTADO
@@ -1365,6 +1481,7 @@ var COLECOES = {
   franquias:     {base:function(){ return FRANQUIAS_BASE; },      tipo:"lista"},
   indicadores:   {base:function(){ return INDICADORES_BASE; },    tipo:"objeto"},
   geoConfig:     {base:function(){ return GEOCONFIG_BASE; },      tipo:"objeto"},
+  pipeline:      {base:function(){ return PIPELINE_BASE; },       tipo:"objeto"},
   divergencia:   {base:function(){ return DIVERGENCIA_BASE; },    tipo:"objeto"}
 };
 
@@ -1507,7 +1624,10 @@ function naNuvem(){ return typeof nuvem !== "undefined" && nuvem.ativo; }
 var LS_KEY = "bussola_grupo_e_v3";
 var state = null;
 var ui = {view:"inicio", openEtapas:{}, openAcc:{}, scriptCat:"Primeira abordagem",
-          ramoAberto:null, calc:{}, buscaSel:0, buscaTermo:"", tema:"dark"};
+          ramoAberto:null, calc:{}, buscaSel:0, buscaTermo:"", tema:"dark",
+          // as etapas que o Controlead devolveu na última puxada, para o
+          // de-para em Administração não ser adivinhação
+          etapasCrm:[]};
 var saveTimer = null;
 
 function estadoPadrao(){
@@ -1563,7 +1683,7 @@ function novoLead(nome){
     // id em formato uuid: é o que a tabela do banco espera
     id:uuid4(), donoId: eu? eu.id : null, donoNome: eu? eu.nome : "",
     nome:nome||"Novo candidato", telefone:"", cidade:"", estado:"", origem:"",
-    status:"Novo lead", criadoEm:nowISO(), atualizadoEm:nowISO(),
+    status:statusInicial(), criadoEm:nowISO(), atualizadoEm:nowISO(),
     etapas:{}, qualificacao:"",
     diag:{motivacao:"", atuacao:"", tipoRenda:"", experiencia:"", rede:"", modeloInteresse:"",
           prazo:"", outrasFranquias:"", capital:"", decisor:"", seguranca:"", prioridade:""},
@@ -1571,6 +1691,18 @@ function novoLead(nome){
     objecoes:[], nota:"", notaGap:"",
     proximaAcao:"", proximaData:"", proximaFeita:false, materialEnviado:"", notas:""
   };
+}
+// Sobe o lead para a coluna mais adiantada cujo etapaMin já foi
+// alcançado — e só para frente. Um lead que o vendedor arrastou para
+// "Proposta" não volta para "Qualificação" porque ele marcou a etapa 3.
+function promoverPorEtapas(l, feitas){
+  if(!l || !ehAberto(l.status)) return;
+  var L = STATUS_LIST(), atual = -1, alvo = -1;
+  for(var i=0;i<L.length;i++){
+    if(L[i].key === l.status) atual = i;
+    if(L[i].etapaMin && feitas >= L[i].etapaMin && L[i].fim !== "ganho" && L[i].fim !== "perdido") alvo = i;
+  }
+  if(alvo > atual && alvo > -1){ l.status = L[alvo].key; }
 }
 function etapaFeita(l,n){ return !!(l && l.etapas && l.etapas[n]); }
 function totalEtapas(l){ var c=0; for(var i=1;i<=12;i++) if(etapaFeita(l,i)) c++; return c; }
@@ -2028,15 +2160,15 @@ function saudacao(){
   return "Boa noite";
 }
 function statusPill(s){
-  var m = STATUS_LIST.filter(function(x){ return x.key===s; })[0] || STATUS_LIST[0];
+  var m = colunaStatus(s) || STATUS_LIST()[0] || {pill:"pill-info"};
   return '<span class="pill '+m.pill+'"><span class="pill-dot"></span>'+esc(s)+"</span>";
 }
 
 function renderInicio(){
   var leads = meusLeads();
   var total = leads.length;
-  var fechados = leads.filter(function(l){ return l.status==="Fechado"; }).length;
-  var ativos = leads.filter(function(l){ return l.status!=="Fechado" && l.status!=="Perdido"; }).length;
+  var fechados = leads.filter(function(l){ return ehGanho(l.status); }).length;
+  var ativos = leads.filter(function(l){ return ehAberto(l.status); }).length;
   var taxa = total ? Math.round(fechados/total*100) : 0;
 
   var hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -2094,7 +2226,7 @@ function renderInicio(){
   h += "</div></div>";
 
   if(total){
-    var etapasFunil = STATUS_LIST.map(function(s){ return s.key; });
+    var etapasFunil = STATUS_LIST().map(function(s){ return s.key; });
     var max = Math.max.apply(null, etapasFunil.map(function(s){
       return leads.filter(function(l){ return l.status===s; }).length; }).concat([1]));
     h += '<div class="section"><div class="section-head"><h2>'+ico("escala",17)+'Funil</h2></div><div class="card">';
@@ -3120,6 +3252,166 @@ function etapaBody(n, l){
   }
 }
 
+/* =========================================================================
+   VIEW: PIPELINE
+
+   O quadro de colunas. É a mesma carteira do Atendimento ao vivo, vista
+   de outro jeito: lá é um candidato por vez, aqui é a fila inteira.
+
+   Duas maneiras de mover o card, de propósito. Arrastar é o gesto que
+   todo mundo espera no computador; a listinha embaixo do card é o que
+   funciona no celular e para quem usa teclado. Só arrastar seria uma
+   pipeline que metade da equipe não consegue usar.
+   ========================================================================= */
+function leadsDaPipeline(){
+  return meusLeads().slice().sort(function(a,b){
+    return (b.atualizadoEm||"").localeCompare(a.atualizadoEm||"");
+  });
+}
+// Lead sem dono é a fila que veio do Controlead: qualquer um pode pegar.
+function naFila(l){ return !l.donoId; }
+
+function cardPipeline(l, colunas){
+  var eu = usuarioAtual();
+  var sub = [l.cidade, l.estado].filter(Boolean).join(" / ");
+  var atrasado = l.proximaData && !l.proximaFeita &&
+                 l.proximaData < new Date().toISOString().slice(0,10);
+  var tags = "";
+  if(naFila(l)) tags += '<span class="pipe-tag pipe-tag-fila">na fila</span>';
+  if(l.externoId) tags += '<span class="pipe-tag pipe-tag-crm">Controlead</span>';
+  if(l.origem && !l.externoId) tags += '<span class="pipe-tag">'+esc(l.origem)+"</span>";
+  if(podeVerEquipe() && l.donoNome && !naFila(l))
+    tags += '<span class="pipe-tag">'+esc(l.donoNome.split(" ")[0])+"</span>";
+  var feitas = totalEtapas(l);
+  if(feitas) tags += '<span class="pipe-tag">'+feitas+"/12 etapas</span>";
+
+  return '<div class="pipe-card" draggable="true" data-lead="'+esc(l.id)+'" tabindex="0" '+
+    'role="button" aria-label="'+esc(l.nome)+' — '+esc(l.status||"")+'" '+
+    'data-action="abrir-lead" data-id="'+esc(l.id)+'">'+
+    '<div class="pipe-card-nome">'+esc(l.nome)+"</div>"+
+    (sub? '<div class="pipe-card-sub">'+esc(sub)+"</div>" : "")+
+    (tags? '<div class="pipe-tags">'+tags+"</div>" : "")+
+    (l.proximaData? '<div class="pipe-card-sub'+(atrasado?" pipe-atraso":"")+'">'+
+        ico("relogio",11)+" "+esc(fmtDate(l.proximaData))+
+        (l.proximaAcao? " · "+esc(l.proximaAcao) : "")+"</div>" : "")+
+    '<select class="pipe-mover" data-action="mover-lead" data-id="'+esc(l.id)+'" '+
+      'aria-label="Mover '+esc(l.nome)+' de coluna">'+
+      colunas.map(function(c){
+        return '<option value="'+esc(c.key)+'"'+(c.key===l.status?" selected":"")+">"+
+               esc(c.key)+"</option>";
+      }).join("")+
+    "</select>"+
+  "</div>";
+}
+
+function renderPipeline(){
+  var colunas = STATUS_LIST();
+  var leads = leadsDaPipeline();
+  var fila = leads.filter(naFila).length;
+  var doCrm = leads.filter(function(l){ return !!l.externoId; }).length;
+
+  var h = '<div class="topline"><div><div class="eyebrow">Pipeline</div>'+
+    '<h1 class="page-title">Onde cada candidato está</h1>'+
+    '<p class="page-sub">A mesma carteira do Atendimento ao vivo, vista por coluna. '+
+    'Arraste o card — ou use a listinha embaixo dele — para mudar de etapa. '+
+    'Clique no card para abrir o roteiro.</p></div>'+
+    '<div class="row">'+
+      (podeEditar()? '<button class="btn btn-primary" data-action="puxar-controlead">'+
+        ico("ciclo",15)+"Puxar do Controlead</button>" : "")+
+      '<button class="btn" data-action="novo-lead">'+ico("usuario",15)+"Novo</button>"+
+    "</div></div>";
+
+  if(!leads.length){
+    h += '<div class="empty" style="margin-top:22px;">Nenhum candidato na pipeline ainda.<br>'+
+      '<span class="faint">Crie um atendimento'+(podeEditar()? " ou puxe os leads do Controlead" : "")+
+      '.</span></div>';
+    document.getElementById("appMain").innerHTML = h;
+    return;
+  }
+
+  h += '<div class="pipe-wrap"><div class="pipe">';
+  colunas.forEach(function(c){
+    var doColuna = leads.filter(function(l){ return (l.status||statusInicial()) === c.key; });
+    h += '<div class="pipe-col" data-col="'+esc(c.key)+'">'+
+      '<div class="pipe-head"><span class="pill '+esc(c.pill||"pill-info")+'">'+
+        '<span class="pill-dot"></span></span>'+
+      '<span class="pipe-nome">'+esc(c.key)+"</span>"+
+      '<span class="pipe-qtd">'+doColuna.length+"</span></div>"+
+      '<div class="pipe-corpo">'+
+        (doColuna.length? doColuna.map(function(l){ return cardPipeline(l, colunas); }).join("")
+                        : '<div class="pipe-vazio">vazio</div>')+
+      "</div></div>";
+  });
+  h += "</div></div>";
+
+  // Um lead que ficou numa coluna que não existe mais não pode sumir da
+  // tela — sumir é como se ele tivesse sido apagado.
+  var chaves = colunas.map(function(c){ return c.key; });
+  var orfaos = leads.filter(function(l){ return chaves.indexOf(l.status||statusInicial()) < 0; });
+  if(orfaos.length){
+    h += callout("warn","aviso", "<b>"+orfaos.length+(orfaos.length===1? " candidato está" : " candidatos estão")+
+      "</b> numa etapa que não existe mais na configuração ("+
+      orfaos.map(function(l){ return esc(l.status); }).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(", ")+
+      "). Mova pela listinha do card ou acerte as colunas em Administração.");
+    h += '<div class="stack" style="margin-top:10px;">'+
+      orfaos.map(function(l){ return '<div class="card" style="padding:10px 12px;">'+
+        cardPipeline(l, colunas)+"</div>"; }).join("")+"</div>";
+  }
+
+  var partes = [leads.length + (leads.length===1? " candidato" : " candidatos")];
+  if(fila) partes.push(fila + " na fila, sem dono");
+  if(doCrm) partes.push(doCrm + " do Controlead");
+  h += '<p class="pipe-legenda">'+esc(partes.join(" · "))+".</p>";
+
+  document.getElementById("appMain").innerHTML = h;
+  ligarArrasto();
+}
+
+// Arrastar e soltar. Só no computador; no celular vale a listinha.
+function ligarArrasto(){
+  var pegando = null;
+  document.querySelectorAll(".pipe-card").forEach(function(el){
+    el.addEventListener("dragstart", function(e){
+      pegando = el.dataset.lead;
+      el.classList.add("arrastando");
+      try{ e.dataTransfer.setData("text/plain", pegando); e.dataTransfer.effectAllowed = "move"; }catch(err){}
+    });
+    el.addEventListener("dragend", function(){ el.classList.remove("arrastando"); pegando = null; });
+  });
+  document.querySelectorAll(".pipe-col").forEach(function(col){
+    col.addEventListener("dragover", function(e){ e.preventDefault(); col.classList.add("alvo"); });
+    col.addEventListener("dragleave", function(){ col.classList.remove("alvo"); });
+    col.addEventListener("drop", function(e){
+      e.preventDefault(); col.classList.remove("alvo");
+      var id = pegando;
+      try{ id = e.dataTransfer.getData("text/plain") || pegando; }catch(err){}
+      if(id) moverLead(id, col.dataset.col);
+    });
+  });
+}
+
+// O único caminho para mudar um lead de coluna — arrastar e a listinha
+// terminam aqui, então a regra de pegar da fila é escrita uma vez só.
+function moverLead(id, coluna){
+  var l = findLead(id);
+  if(!l || !coluna || l.status === coluna) return;
+  var eu = usuarioAtual();
+  var pegou = false;
+  // Mexer num lead da fila é assumir ele. Não é uma gentileza da tela: o
+  // banco recusa a gravação de quem edita um lead sem virar o dono
+  // (pipeline-controlead.sql). Fazer isso aqui evita a edição que some
+  // sozinha na próxima sincronização.
+  if(naFila(l) && eu && !podeEditar()){ l.donoId = eu.id; l.donoNome = eu.nome; pegou = true; }
+  l.status = coluna;
+  // marca que a coluna foi escolhida por gente, para a próxima puxada do
+  // Controlead não desfazer o que a pessoa acabou de fazer
+  l.statusManual = true;
+  l.atualizadoEm = nowISO();
+  saveStateNow(); render();
+  toast(pegou? ("Você pegou " + l.nome + ". Agora está em " + coluna + ".")
+             : (l.nome + " → " + coluna));
+}
+
 function renderAtendimento(){
   var l = activeLead();
   var h = '<div class="topline"><div><div class="eyebrow">Atendimento ao vivo</div>'+
@@ -3153,7 +3445,7 @@ function renderAtendimento(){
       '<div class="faint">'+esc([l.cidade,l.estado].filter(Boolean).join(" - ")||"Cidade não informada")+
       (l.qualificacao? " · "+esc(l.qualificacao):"")+"</div></div>"+
       '<div class="row"><select class="status-select" data-action="mudar-status" data-id="'+l.id+'">'+
-      STATUS_LIST.map(function(s){ return '<option value="'+esc(s.key)+'"'+(s.key===l.status?" selected":"")+">"+esc(s.key)+"</option>"; }).join("")+"</select>"+
+      STATUS_LIST().map(function(s){ return '<option value="'+esc(s.key)+'"'+(s.key===l.status?" selected":"")+">"+esc(s.key)+"</option>"; }).join("")+"</select>"+
       '<button class="btn btn-ghost btn-sm" data-action="editar-lead" data-id="'+l.id+'">Editar</button>'+
       '<button class="btn btn-ghost btn-sm btn-danger" data-action="excluir-lead" data-id="'+l.id+'">Excluir</button></div></div>'+
       '<div class="progress-track"><div class="progress-fill" id="progressFill" style="width:'+pct+'%;"></div></div>'+
@@ -3482,8 +3774,8 @@ var CAMPOS_USUARIO_NUVEM = [
    ========================================================================= */
 function metricasDe(leads){
   var total = leads.length;
-  var fechados  = leads.filter(function(l){ return l.status==="Fechado"; }).length;
-  var perdidos  = leads.filter(function(l){ return l.status==="Perdido"; }).length;
+  var fechados  = leads.filter(function(l){ return ehGanho(l.status); }).length;
+  var perdidos  = leads.filter(function(l){ return ehPerdido(l.status); }).length;
   var ativos    = total - fechados - perdidos;
   var etapas    = leads.reduce(function(a,l){ return a + totalEtapas(l); }, 0);
   var notas     = leads.map(function(l){ return parseFloat(l.nota); }).filter(function(n){ return isFinite(n); });
@@ -3493,7 +3785,7 @@ function metricasDe(leads){
     return l.proximaData && !l.proximaFeita && new Date(l.proximaData+"T00:00:00") <= hoje;
   }).length;
   var semProximo = leads.filter(function(l){
-    return l.status!=="Fechado" && l.status!=="Perdido" && !l.proximaData;
+    return ehAberto(l.status) && !l.proximaData;
   }).length;
   return {
     total:total, fechados:fechados, perdidos:perdidos, ativos:ativos,
@@ -3634,10 +3926,10 @@ function renderEquipe(){
   h += "</div>";
 
   if(todos.length){
-    var max = Math.max.apply(null, STATUS_LIST.map(function(st){
+    var max = Math.max.apply(null, STATUS_LIST().map(function(st){
       return todos.filter(function(l){ return l.status===st.key; }).length; }).concat([1]));
     h += '<div class="section"><div class="section-head"><h2>'+ico("escala",17)+"Funil da equipe</h2></div><div class=\"card\">";
-    STATUS_LIST.forEach(function(st){
+    STATUS_LIST().forEach(function(st){
       var c = todos.filter(function(l){ return l.status===st.key; }).length;
       h += '<div class="funnel-row"><span class="muted">'+esc(st.key)+"</span>"+
         '<div class="funnel-track"><div class="funnel-fill" style="width:'+Math.round(c/max*100)+'%;"></div></div>'+
@@ -3697,7 +3989,8 @@ var ADM_ABAS = [
   {k:"geo",       n:"Indicadores",ic:"alvo"},
   {k:"comissoes", n:"Comissões",  ic:"dinheiro"},
   {k:"scripts",   n:"Scripts",    ic:"balao"},
-  {k:"objecoes",  n:"Objeções",   ic:"escudo"}
+  {k:"objecoes",  n:"Objeções",   ic:"escudo"},
+  {k:"pipeline",  n:"Pipeline",   ic:"escala"}
 ];
 
 function linhaItem(titulo, sub, acoes, extra){
@@ -3755,8 +4048,139 @@ function renderAdm(){
   else if(aba==="comissoes") h += admComissoes();
   else if(aba==="scripts")   h += admScripts();
   else if(aba==="objecoes")  h += admObjecoes();
+  else if(aba==="pipeline")  h += admPipeline();
 
   document.getElementById("appMain").innerHTML = h;
+}
+
+/* -------------------------------------------------------------------------
+   Administração → Pipeline
+
+   Duas coisas moram aqui: os nomes das colunas e o de-para com as etapas
+   do Controlead. As duas existem pela mesma razão — a equipe não pode
+   falar duas línguas. Quem olha o CRM e quem olha a Bússola tem que ver
+   o mesmo nome de etapa, senão a reunião de pipeline vira tradução.
+   ------------------------------------------------------------------------- */
+function admPipeline(){
+  var p = PIPELINE();
+  var colunas = p.colunas || [];
+  var dePara = p.dePara || {};
+  var usadas = {};
+  (state.leads||[]).forEach(function(l){ usadas[l.status] = (usadas[l.status]||0) + 1; });
+
+  var h = '<div class="section-head"><h2>'+ico("escala",17)+"Colunas da pipeline</h2></div>";
+  h += avisoRestaurar("pipeline","as colunas da pipeline");
+  h += callout("accent","escala",
+    "A ordem aqui é a ordem no quadro. <b>etapaMin</b> é a promoção automática: com esse tanto de "+
+    "etapas do roteiro concluídas, o lead sobe sozinho para cá — e nunca desce. "+
+    "<b>Fim</b> marca as duas colunas que encerram o atendimento; é por elas que o Início conta "+
+    "carteira ativa e fechamento.");
+
+  h += '<div style="overflow-x:auto;"><table class="tbl"><thead><tr>'+
+    "<th>Coluna</th><th>Cor</th><th>etapaMin</th><th>Fim</th><th>Candidatos</th><th></th>"+
+    "</tr></thead><tbody>"+
+    colunas.map(function(c,i){
+      return "<tr>"+
+        '<td><input type="text" class="inp-sm" value="'+esc(c.key)+'" data-pipe="key" data-i="'+i+'"></td>'+
+        "<td>"+seletorPill(c.pill, i)+"</td>"+
+        '<td><input type="number" min="0" max="12" class="inp-sm" style="width:64px;" '+
+          'value="'+esc(c.etapaMin||"")+'" data-pipe="etapaMin" data-i="'+i+'"></td>'+
+        "<td>"+
+          '<select class="inp-sm" data-pipe="fim" data-i="'+i+'">'+
+            ['<option value="">—</option>',
+             '<option value="ganho"'+(c.fim==="ganho"?" selected":"")+">ganho</option>",
+             '<option value="perdido"'+(c.fim==="perdido"?" selected":"")+">perdido</option>"].join("")+
+          "</select></td>"+
+        '<td class="num">'+(usadas[c.key]||0)+"</td>"+
+        '<td class="col-abrir">'+
+          '<button class="btn btn-sm" data-action="pipe-mover-col" data-i="'+i+'" data-d="-1" '+
+            'aria-label="Subir">↑</button> '+
+          '<button class="btn btn-sm" data-action="pipe-mover-col" data-i="'+i+'" data-d="1" '+
+            'aria-label="Descer">↓</button> '+
+          '<button class="btn btn-sm btn-danger" data-action="pipe-remover-col" data-i="'+i+'">Remover</button>'+
+        "</td></tr>";
+    }).join("")+"</tbody></table></div>";
+
+  h += '<div class="row" style="margin-top:12px;">'+
+    '<button class="btn" data-action="pipe-nova-col">'+ico("mais",14)+"Nova coluna</button>"+
+    '<button class="btn btn-primary" data-action="pipe-salvar">'+ico("ok",14)+"Salvar colunas</button>"+
+    "</div>";
+
+  /* ---- de-para com o Controlead ---- */
+  h += '<hr class="sep"><div class="section-head"><h2>'+ico("ciclo",17)+"Etapas do Controlead</h2></div>";
+  var doCrm = (state.leads||[]).filter(function(l){ return !!l.externoId; }).length;
+  h += callout("accent","balao",
+    "Etapa que tem o <b>mesmo nome</b> de uma coluna já casa sozinha — acento e maiúscula não atrapalham. "+
+    "Só precisa de linha aqui a etapa que o Controlead chama de um jeito e vocês de outro. "+
+    "O que não casar cai na primeira coluna."+
+    (doCrm? " Hoje há <b>"+doCrm+"</b> candidato(s) vindo(s) do Controlead." : ""));
+
+  var vistas = (ui.etapasCrm || []).slice();
+  Object.keys(dePara).forEach(function(k){ if(vistas.indexOf(k) < 0) vistas.push(k); });
+
+  if(!vistas.length){
+    h += '<div class="empty" style="margin-top:14px;">Ainda não vi nenhuma etapa do Controlead.<br>'+
+      '<span class="faint">Puxe os leads uma vez na Pipeline: as etapas que vierem aparecem aqui '+
+      "para você acertar o de-para.</span></div>";
+  } else {
+    h += '<div style="overflow-x:auto;"><table class="tbl"><thead><tr>'+
+      "<th>No Controlead</th><th>Vira, aqui</th></tr></thead><tbody>"+
+      vistas.map(function(etapa){
+        var atual = dePara[etapa] || colunaDoControlead(etapa);
+        var automatico = !dePara[etapa];
+        return "<tr><td>"+esc(etapa)+
+          (automatico? ' <span class="pill pill-info">casou sozinha</span>' : "")+"</td>"+
+          '<td><select class="inp-sm" data-depara="'+esc(etapa)+'">'+
+            colunas.map(function(c){
+              return '<option value="'+esc(c.key)+'"'+(c.key===atual?" selected":"")+">"+esc(c.key)+"</option>";
+            }).join("")+"</select></td></tr>";
+      }).join("")+"</tbody></table></div>"+
+      '<div class="row" style="margin-top:12px;">'+
+      '<button class="btn btn-primary" data-action="pipe-salvar-depara">'+ico("ok",14)+"Salvar de-para</button></div>";
+  }
+
+  /* ---- estado da integração ---- */
+  h += '<hr class="sep"><div class="section-head"><h2>'+ico("chave",17)+"Ligação com o Controlead</h2></div>";
+  h += callout("warn","aviso",
+    "O token do Controlead <b>não fica no app</b> — este arquivo é público no GitHub. "+
+    "Ele vive em <b>Edge Functions → Secrets</b> no Supabase, junto com o endereço da API:"+
+    "<br><br>· <code>CONTROLEAD_URL</code> — o endereço, com https"+
+    "<br>· <code>CONTROLEAD_TOKEN</code> — o token"+
+    "<br>· <code>CONTROLEAD_AUTH</code> — opcional: bearer (padrão), token, apikey ou query"+
+    "<br>· <code>CONTROLEAD_LISTA</code> e <code>CONTROLEAD_CAMPOS</code> — opcionais, quando os "+
+    "nomes dos campos não baterem"+
+    "<br><br>Ver o arquivo <b>supabase/functions/controlead/COMO-PUBLICAR.md</b>.");
+  return h;
+}
+
+function seletorPill(atual, i){
+  var cores = [["pill-info","azul"],["pill-accent","roxo"],["pill-gold","dourado"],
+               ["pill-success","verde"],["pill-danger","vermelho"]];
+  return '<select class="inp-sm" data-pipe="pill" data-i="'+i+'">'+
+    cores.map(function(c){
+      return '<option value="'+c[0]+'"'+(c[0]===(atual||"pill-info")?" selected":"")+">"+c[1]+"</option>";
+    }).join("")+"</select>";
+}
+
+// Lê a tabela de colunas da tela. Fica junto porque salvar e desenhar
+// precisam concordar sobre os nomes dos campos.
+function lerColunasDaTela(){
+  var por = {};
+  document.querySelectorAll("[data-pipe]").forEach(function(el){
+    var i = el.dataset.i;
+    (por[i] = por[i] || {})[el.dataset.pipe] = el.value;
+  });
+  var saida = [];
+  Object.keys(por).sort(function(a,b){ return a-b; }).forEach(function(i){
+    var c = por[i], key = (c.key||"").trim();
+    if(!key) return;                       // coluna sem nome é coluna apagada
+    var col = {key:key, pill:c.pill||"pill-info"};
+    var n = parseInt(c.etapaMin, 10);
+    if(n > 0) col.etapaMin = n;
+    if(c.fim === "ganho" || c.fim === "perdido") col.fim = c.fim;
+    saida.push(col);
+  });
+  return saida;
 }
 
 function admUsuarios(){
@@ -4372,7 +4796,7 @@ function aplicarTema(){
   if(ui.tema==="auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", ui.tema);
   document.querySelectorAll(".theme-btn").forEach(function(b){ b.classList.toggle("active", b.dataset.tema===ui.tema); });
 }
-var NOMES_VIEW = {inicio:"Início", atendimento:"Atendimento", grupo:"O Grupo É", franquias:"Franquias",
+var NOMES_VIEW = {inicio:"Início", atendimento:"Atendimento", pipeline:"Pipeline", grupo:"O Grupo É", franquias:"Franquias",
   ramos:"Ramos e segmentos", parceiros:"Parceiros", rede:"Mapa da rede", geo:"Raio-X da cidade", comissoes:"Comissões", calculadora:"Calculadora",
   scripts:"Scripts e objeções", equipe:"Equipe", adm:"Administração", config:"Configurações"};
 
@@ -4385,7 +4809,7 @@ function render(){
     if(nome){ b.title = nome; b.setAttribute("aria-label", nome); }
   });
   // barra inferior e painel "Mais" (celular)
-  var noSheet = ["grupo","franquias","parceiros","rede","geo","calculadora","scripts","config"];
+  var noSheet = ["pipeline","grupo","franquias","parceiros","rede","geo","calculadora","scripts","config"];
   document.querySelectorAll(".bnav-btn").forEach(function(b){
     if(b.dataset.ic && !b.querySelector(".ico-svg")) b.insertAdjacentHTML("afterbegin", ico(b.dataset.ic,20));
     b.classList.toggle("active", b.dataset.view? b.dataset.view===ui.view
@@ -4429,6 +4853,7 @@ function render(){
 
   var v = ui.view;
   if(v==="atendimento") renderAtendimento();
+  else if(v==="pipeline") renderPipeline();
   else if(v==="grupo") renderGrupo();
   else if(v==="franquias") renderFranquias();
   else if(v==="ramos") renderRamos();
@@ -4517,6 +4942,8 @@ function handle(action, el){
       toast(id? "Candidato atualizado." : "Atendimento criado.");
       break;
     }
+    case "mover-lead": moverLead(el.dataset.id, el.value); break;
+    case "puxar-controlead": puxarControlead(); break;
     case "abrir-lead": {
       state.activeLeadId = el.dataset.id;
       ui.view = "atendimento"; ui.openEtapas = {}; ui.calc.roy = null;
@@ -4533,7 +4960,7 @@ function handle(action, el){
       break;
     case "mudar-status":
       l = findLead(el.dataset.id);
-      if(l){ l.status = el.value; l.atualizadoEm = nowISO(); saveStateNow(); render(); }
+      if(l){ l.status = el.value; l.statusManual = true; l.atualizadoEm = nowISO(); saveStateNow(); render(); }
       break;
     case "marcar-feito":
       l = findLead(el.dataset.id);
@@ -4562,10 +4989,12 @@ function handle(action, el){
         ui.openEtapas = {};
         var seg = proximaEtapaPendente(l);
         if(seg) ui.openEtapas[seg] = true;
-        if(ne>=3 && l.status==="Novo lead") l.status = "Qualificação";
-        if(ne>=5 && (l.status==="Novo lead"||l.status==="Contato iniciado"||l.status==="Qualificação")) l.status = "Apresentação";
-        if(ne>=9 && ["Apresentação"].indexOf(l.status)>-1) l.status = "Análise";
-        if(ne>=11 && ["Análise","Apresentação"].indexOf(l.status)>-1) l.status = "Proposta";
+        // O roteiro empurra o lead sozinho: completar etapas é sinal de
+        // avanço, e ninguém deveria ter que mover o card à mão para
+        // dizer o que o próprio atendimento já disse. Nunca puxa para
+        // trás, e nunca mexe em quem já foi fechado ou perdido — quem
+        // decide o fim é a pessoa, não a contagem de etapas.
+        promoverPorEtapas(l, ne);
       }
       l.atualizadoEm = nowISO(); saveStateNow(); render();
       setTimeout(function(){
@@ -4685,6 +5114,74 @@ function handle(action, el){
     }
     /* ---------- Administração ---------- */
     case "adm-aba": ui.admAba = el.dataset.k; render(); break;
+
+    /* ---------- pipeline ---------- */
+    case "pipe-nova-col": {
+      var pn = clonar(PIPELINE());
+      pn.colunas = lerColunasDaTela();
+      pn.colunas.push({key:"Nova etapa", pill:"pill-info"});
+      db.set("pipeline", pn); render(); break;
+    }
+    case "pipe-mover-col": {
+      var pm = clonar(PIPELINE()), cols = lerColunasDaTela();
+      var iM = parseInt(el.dataset.i,10), d = parseInt(el.dataset.d,10), jM = iM + d;
+      if(jM < 0 || jM >= cols.length) return;
+      var tmp = cols[iM]; cols[iM] = cols[jM]; cols[jM] = tmp;
+      pm.colunas = cols; db.set("pipeline", pm); render(); break;
+    }
+    case "pipe-remover-col": {
+      var cAtual = lerColunasDaTela()[parseInt(el.dataset.i,10)];
+      if(!cAtual) return;
+      var quantos = (state.leads||[]).filter(function(x){ return x.status === cAtual.key; }).length;
+      // Apagar a coluna não pode apagar o candidato. Se tem gente nela,
+      // a pessoa escolhe para onde a gente vai antes de sumir a coluna.
+      if(quantos && !window.confirm(
+        "Há "+quantos+" candidato(s) em \""+cAtual.key+"\".\n\n"+
+        "Removendo a coluna, eles ficam sem etapa válida e aparecem num aviso na Pipeline, "+
+        "para você remanejar um a um. Ninguém é apagado.\n\nRemover mesmo assim?")) return;
+      var pr = clonar(PIPELINE());
+      pr.colunas = lerColunasDaTela().filter(function(x,ix){ return ix !== parseInt(el.dataset.i,10); });
+      if(!pr.colunas.length){ toast("A pipeline precisa de pelo menos uma coluna."); return; }
+      db.set("pipeline", pr); render(); break;
+    }
+    case "pipe-salvar": {
+      var ps = clonar(PIPELINE()), novas = lerColunasDaTela();
+      if(!novas.length){ toast("A pipeline precisa de pelo menos uma coluna."); return; }
+      var chavesNovas = novas.map(function(c){ return c.key; });
+      if(chavesNovas.length !== chavesNovas.filter(function(v,i,a){ return a.indexOf(v)===i; }).length){
+        toast("Duas colunas com o mesmo nome — os cards não saberiam em qual ficar."); return;
+      }
+      // Renomear uma coluna tem que levar os leads junto. Sem isto, mudar
+      // "Proposta" para "Proposta enviada" faria sumir da tela todo mundo
+      // que estava lá.
+      var antigas = (ps.colunas||[]).map(function(c){ return c.key; });
+      var mexidos = 0;
+      if(antigas.length === novas.length){
+        antigas.forEach(function(velho, ix){
+          var novo = chavesNovas[ix];
+          if(velho === novo) return;
+          (state.leads||[]).forEach(function(l){
+            if(l.status === velho){ l.status = novo; l.atualizadoEm = nowISO(); mexidos++; }
+          });
+        });
+      }
+      ps.colunas = novas;
+      db.set("pipeline", ps);
+      if(mexidos) saveStateNow();
+      render();
+      toast(mexidos? ("Colunas salvas. "+mexidos+" candidato(s) acompanharam o novo nome.")
+                   : "Colunas salvas.");
+      break;
+    }
+    case "pipe-salvar-depara": {
+      var pd = clonar(PIPELINE());
+      pd.dePara = pd.dePara || {};
+      document.querySelectorAll("[data-depara]").forEach(function(sel){
+        pd.dePara[sel.dataset.depara] = sel.value;
+      });
+      db.set("pipeline", pd); render(); toast("De-para salvo.");
+      break;
+    }
     case "adm-ramo": ui.admRamo = el.dataset.id; render(); break;
     case "restaurar-colecao":
       if(naNuvem()){
@@ -6975,6 +7472,158 @@ function painelGeo(a){
    houver internet, o Raio-X continua inteiro — some só o botão.
    ===================================================================== */
 
+/* =========================================================================
+   CONTROLEAD — os leads do CRM entram na pipeline
+
+   O token do Controlead NÃO está aqui, e não pode estar: este arquivo
+   vai para um repositório público no GitHub. Token de CRM não é cota de
+   API — é a carteira de leads da empresa, com nome e telefone de gente
+   real. Quem guarda é uma função no Supabase
+   (supabase/functions/controlead), que só responde a quem está logado e
+   que decide sozinha para onde ligar. Daqui sai um pedido sem parâmetro
+   nenhum de destino; de lá volta uma lista já normalizada.
+
+   Puxar é de administrador e editor, e o motivo é técnico antes de ser
+   hierárquico: só eles LEEM a carteira inteira. Um vendedor puxando
+   duplicaria todos os leads que estão com os colegas, porque não os
+   enxerga para comparar.
+   ========================================================================= */
+function leadPorExterno(ext){
+  if(!ext) return null;
+  for(var i=0;i<state.leads.length;i++)
+    if(state.leads[i].externoId === ext) return state.leads[i];
+  return null;
+}
+
+// Acha na equipe quem o Controlead chamou de responsável. Compara por
+// e-mail primeiro, depois por nome — e desiste em silêncio: lead sem
+// dono cai na fila, que é melhor do que cair no dono errado.
+function donoPeloNome(quem){
+  if(!quem) return null;
+  var alvo = normalizar(quem);
+  var lista = (typeof nuvem !== "undefined" && nuvem.perfis && nuvem.perfis.length)
+    ? nuvem.perfis : (state.usuarios || []);
+  for(var i=0;i<lista.length;i++){
+    var u = lista[i];
+    if(u.email && normalizar(u.email) === alvo) return u;
+  }
+  for(var j=0;j<lista.length;j++){
+    if(normalizar(lista[j].nome || "") === alvo) return lista[j];
+  }
+  return null;
+}
+
+// Junta um lead do Controlead com o que já existe aqui.
+//
+// A regra que importa: o CRM manda nos dados de cadastro (nome,
+// telefone, cidade), a Bússola manda no trabalho (etapas, diagnóstico,
+// anotações, objeções). Reimportar não pode apagar o que o vendedor
+// escreveu — se apagasse, ninguém apertaria o botão duas vezes.
+function fundirLead(existente, cru){
+  var l = existente, mudou = false;
+  ["nome","telefone","email","cidade","estado","origem"].forEach(function(c){
+    if(cru[c] && l[c] !== cru[c]){ l[c] = cru[c]; mudou = true; }
+  });
+  if(cru.obs && (l.notas||"").indexOf(cru.obs) < 0){
+    l.notas = (l.notas? l.notas + "\n" : "") + cru.obs;
+    mudou = true;
+  }
+  // A etapa do CRM só vale enquanto ninguém mexeu no lead aqui.
+  //
+  // Isto foi um bug de verdade, pego no teste: bastava alguém arrastar um
+  // card e reimportar para o lead voltar sozinho para a coluna do CRM. A
+  // pipeline desmanchava sozinha a cada puxada. Duas coisas travam a
+  // etapa: ter movido o card à mão (statusManual) ou ter começado o
+  // roteiro. A partir daí quem sabe onde o candidato está é o vendedor.
+  if(cru.etapa && !l.statusManual && !totalEtapas(l)){
+    var col = colunaDoControlead(cru.etapa);
+    if(col !== l.status){ l.status = col; mudou = true; }
+  }
+  if(mudou) l.atualizadoEm = nowISO();
+  return mudou;
+}
+
+function importarDoControlead(lista){
+  var r = {novos:0, atualizados:0, iguais:0, semEtapa:[], fila:0};
+  (lista || []).forEach(function(cru){
+    if(!cru || !cru.externoId) return;
+    var col = colunaDoControlead(cru.etapa);
+    if(cru.etapa && normalizar(col) !== normalizar(cru.etapa) && r.semEtapa.indexOf(cru.etapa) < 0)
+      r.semEtapa.push(cru.etapa);
+
+    var achado = leadPorExterno(cru.externoId);
+    if(achado){
+      if(fundirLead(achado, cru)) r.atualizados++; else r.iguais++;
+      return;
+    }
+    var l = novoLead(cru.nome || "Sem nome");
+    l.externoId = cru.externoId;
+    l.telefone = cru.telefone || "";
+    l.email = cru.email || "";
+    l.cidade = cru.cidade || "";
+    l.estado = cru.estado || "";
+    l.origem = cru.origem || "Controlead";
+    l.notas = cru.obs || "";
+    l.status = col;
+    if(cru.criadoEm) l.criadoEm = cru.criadoEm;
+    // O responsável do CRM vira o dono aqui, quando dá para reconhecer.
+    // Quando não dá, o lead fica sem dono: é a fila que a equipe pega.
+    var dono = donoPeloNome(cru.responsavel);
+    if(dono){ l.donoId = dono.id; l.donoNome = dono.nome; }
+    else { l.donoId = null; l.donoNome = ""; r.fila++; }
+    state.leads.push(l);
+    r.novos++;
+  });
+  if(r.novos || r.atualizados) saveStateNow();
+  return r;
+}
+
+function puxarControlead(){
+  if(!podeEditar()){ toast("Puxar do Controlead é de administrador ou editor."); return; }
+  if(typeof nuvem === "undefined" || !nuvem.ativo){
+    toast("Precisa estar conectado ao Supabase para falar com o Controlead.");
+    return;
+  }
+  toast("Falando com o Controlead…");
+  nuvem.sb.functions.invoke("controlead", {body: {paginas: 5}}).then(function(r){
+    if(r.error) return lerErroFuncao(r.error).then(function(i){ throw i; });
+    if(r.data && r.data.erro) throw {tipo: r.data.erro, dica: r.data.detalhe, chaves: r.data.chaves};
+    var res = importarDoControlead((r.data||{}).leads);
+    // As etapas que o Controlead usou de verdade viram sugestão de
+    // configuração — é mais confiável que qualquer lista que eu chutasse.
+    if(r.data && r.data.etapas && r.data.etapas.length) ui.etapasCrm = r.data.etapas;
+    render();
+    var frases = [];
+    if(res.novos) frases.push(res.novos + (res.novos===1? " novo" : " novos"));
+    if(res.atualizados) frases.push(res.atualizados + " atualizado" + (res.atualizados===1?"":"s"));
+    if(res.iguais) frases.push(res.iguais + " sem mudança");
+    toast(frases.length? ("Controlead: " + frases.join(", ") + ".") : "Controlead: nada novo.");
+    if(res.fila)
+      setTimeout(function(){ toast(res.fila + " lead(s) sem responsável no CRM foram para a fila."); }, 2600);
+    if(res.semEtapa.length)
+      setTimeout(function(){
+        toast('Etapas que não bateram com nenhuma coluna: ' + res.semEtapa.slice(0,3).join(", ") +
+              '. Acerte o de-para em Administração.');
+      }, 5200);
+  }).catch(function(info){
+    toast(erroControlead(info));
+  });
+}
+
+function erroControlead(info){
+  var t = (info && info.tipo) || "rede";
+  if(t === "nao-publicada") return "A função controlead ainda não foi publicada no Supabase.";
+  if(t === "sem-configuracao") return "Faltam os segredos do Controlead no Supabase: " + (info.dica||"");
+  if(t === "token") return "O Controlead recusou o token. Ele foi trocado?";
+  if(t === "limite") return "O Controlead pediu para esperar. Tente daqui a pouco.";
+  if(t === "vazio") return "A resposta veio sem lista de leads" +
+    (info.chaves && info.chaves.length ? " (veio: " + info.chaves.join(", ") + ")" : "") +
+    ". Configure CONTROLEAD_LISTA.";
+  if(t === "formato") return "O Controlead respondeu algo que não é JSON.";
+  if(t === "sem-acesso") return "Sua sessão expirou. Entre de novo.";
+  return "Não consegui falar com o Controlead agora.";
+}
+
 var IA_DISPONIVEL = null;   // null = ainda não sabemos; true/false depois
 var IA_MOTIVO = "";         // por que foi desligada, quando foi
 
@@ -8056,7 +8705,7 @@ var nuvem = {
 
   /* ---------- atendimentos ---------- */
   paraLinha: function(l){
-    return {id:l.id, dono:l.donoId, status:l.status||"Novo lead",
+    return {id:l.id, dono:l.donoId || null, status:l.status||statusInicial(),
             dados:l, atualizado_em:l.atualizadoEm || nowISO()};
   },
   daLinha: function(row){
@@ -8085,8 +8734,11 @@ var nuvem = {
         locais.forEach(function(loc){
           var srv = porIdBanco[loc.id];
           if(!srv){
-            // só existe aqui: mantém se for meu (foi criado sem conexão)
-            if(loc.donoId === meuId) final.push(loc);
+            // Só existe aqui: mantém se for meu (criado sem conexão) ou
+            // se eu sou quem edita — a importação do Controlead cria
+            // leads no nome dos outros e para a fila, e eles não podem
+            // sumir se a página recarregar antes de sincronizar.
+            if(loc.donoId === meuId || podeEditar()) final.push(loc);
             return;
           }
           // existe nos dois: fica a versão mais recente
