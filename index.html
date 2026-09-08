@@ -935,6 +935,29 @@
     overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
   }
 
+  /* Chave de dois estados. Verde/cinza não bastam: o rótulo ao lado diz
+     em palavras o que está valendo, porque "ligado" só é óbvio para quem
+     desenhou. */
+  .chave{
+    display:inline-flex;align-items:center;gap:9px;background:none;border:none;
+    padding:4px 2px;cursor:pointer;font:inherit;color:var(--ink-faint);
+  }
+  .chave-trilho{
+    width:40px;height:23px;border-radius:20px;background:var(--paper-sunken);
+    border:1px solid var(--border);position:relative;transition:background .16s,border-color .16s;
+    flex:0 0 auto;
+  }
+  .chave-bola{
+    position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;
+    background:var(--ink-faint);transition:transform .16s,background .16s;
+  }
+  .chave-on .chave-trilho{background:var(--accent-soft);border-color:var(--accent);}
+  .chave-on .chave-bola{transform:translateX(17px);background:var(--accent);}
+  .chave-rot{font-size:12.5px;font-weight:650;}
+  .chave-on .chave-rot{color:var(--accent-strong);}
+  .chave:focus-visible{outline:none;}
+  .chave:focus-visible .chave-trilho{box-shadow:var(--ring);}
+
   /* Campo pequeno, para dentro de tabela de administração. */
   .inp-sm{
     font:inherit;font-size:12.5px;padding:5px 8px;border-radius:10px;
@@ -1454,11 +1477,11 @@ var TELAS_OCULTAVEIS = [
 // Estas três nunca se escondem: sem elas a pessoa não trabalha nem sai.
 var TELAS_FIXAS = ["inicio", "atendimento", "config"];
 
-var VISIBILIDADE_BASE = {vendedor:{}, editor:{}};
+var VISIBILIDADE_BASE = {vendedor:{}, editor:{}, leadsCrm:{}};
 
 function VISIBILIDADE(){
   var v = db.get("visibilidade") || {};
-  return {vendedor: v.vendedor || {}, editor: v.editor || {}};
+  return {vendedor: v.vendedor || {}, editor: v.editor || {}, leadsCrm: v.leadsCrm || {}};
 }
 // O administrador vê tudo, sempre. Se ele pudesse esconder uma tela de si
 // mesmo, escondê-la-ia a de Administração e ficaria sem como desfazer.
@@ -1729,8 +1752,43 @@ function activeLead(){
 function meusLeads(){
   var eu = usuarioAtual();
   if(!eu) return [];
-  if(eu.papel==="admin" || eu.papel==="editor") return state.leads;
-  return state.leads.filter(function(l){ return !l.donoId || l.donoId===eu.id; });
+  var lista = (eu.papel==="admin" || eu.papel==="editor")
+    ? state.leads
+    : state.leads.filter(function(l){ return !l.donoId || l.donoId===eu.id; });
+  return lista.filter(podeVerLead);
+}
+
+// Lead que veio do Controlead tem id de lá; o que o vendedor criou não tem.
+// É por esse campo que dá para guardar um lote importado sem encostar no
+// que a equipe fez à mão.
+function ehLeadDoCrm(l){ return !!(l && l.externoId); }
+
+// "Já mexeram nisto": etapa concluída, card movido à mão ou anotação
+// escrita. Não é o mesmo que ter criado — é ter trabalhado.
+function leadTrabalhado(l){
+  return totalEtapas(l) > 0 || !!l.statusManual || !!String(l.notas||"").trim();
+}
+
+// Guardar o lote importado tira do caminho o que ainda não está pronto —
+// mas NUNCA some com um atendimento que já está em andamento. Um lead que
+// sumisse no meio de uma conversa seria pior do que a confusão que isto
+// veio resolver.
+function podeVerLead(l){
+  if(!ehLeadDoCrm(l)) return true;
+  var eu = usuarioAtual();
+  if(!eu || eu.papel === "admin") return true;
+  var regra = (VISIBILIDADE().leadsCrm || {})[eu.papel];
+  if(regra !== false) return true;
+  return leadTrabalhado(l);
+}
+
+// Quantos leads do Controlead estão guardados de cada nível, para o
+// administrador ver o tamanho do que escondeu.
+function contarLeadsGuardados(papel){
+  if(((VISIBILIDADE().leadsCrm||{})[papel]) !== false) return 0;
+  return (state.leads||[]).filter(function(l){
+    return ehLeadDoCrm(l) && !leadTrabalhado(l);
+  }).length;
 }
 
 function findLead(id){ for(var i=0;i<state.leads.length;i++) if(state.leads[i].id===id) return state.leads[i]; return null; }
@@ -3379,6 +3437,12 @@ function renderPipeline(){
     '<div class="row">'+
       (podeEditar()? '<button class="btn btn-primary" data-action="puxar-controlead">'+
         ico("ciclo",15)+"Puxar do Controlead</button>" : "")+
+      // A chave onde a pessoa está quando percebe o problema, e não três
+      // telas adentro em Administração.
+      (ehAdmin() && (state.leads||[]).some(ehLeadDoCrm)
+        ? '<span class="row" style="gap:7px;"><span class="faint" style="font-size:12.5px;">'+
+          "Para o vendedor:</span>"+chaveCrm("vendedor")+"</span>"
+        : "")+
       '<button class="btn" data-action="novo-lead">'+ico("usuario",15)+"Novo</button>"+
     "</div></div>";
 
@@ -4170,13 +4234,38 @@ function admTelas(){
     '<button class="btn btn-primary" data-action="telas-salvar">'+ico("ok",14)+"Salvar</button>"+
     '<button class="btn" data-action="telas-tudo">'+ico("olho",14)+"Reabrir todas</button></div>";
 
+  /* ---- os leads que vieram do Controlead ---- */
+  var doCrm = (state.leads||[]).filter(ehLeadDoCrm).length;
+  h += '<hr class="sep"><div class="section-head"><h2>'+ico("ciclo",17)+
+       "Leads vindos do Controlead</h2></div>";
+  h += callout("accent","usuario",
+    "Esconder a <b>Pipeline</b> não esconde os leads: eles estão na mesma carteira e aparecem "+
+    "no Atendimento ao vivo, misturados com os que o vendedor criou. Para guardar o lote "+
+    "importado enquanto você ajusta, é aqui."+
+    (doCrm? " Hoje são <b>"+doCrm+"</b> candidato(s) vindo(s) do Controlead." : ""));
+  h += callout("warn","aviso",
+    "<b>Um atendimento em andamento nunca some.</b> Se o vendedor já concluiu uma etapa, "+
+    "moveu o card ou escreveu uma anotação naquele candidato, ele continua aparecendo — "+
+    "sumir no meio de uma conversa seria pior que a confusão que isto veio resolver. "+
+    "E nada é apagado: reabrindo, todos voltam.");
+
+  h += '<div style="overflow-x:auto;"><table class="tbl"><thead><tr>'+
+    "<th>Quem</th><th>Leads do Controlead</th><th>Guardados agora</th>"+
+    "</tr></thead><tbody>"+
+    ["vendedor","editor"].map(function(papel){
+      return "<tr><td>"+(papel === "vendedor" ? "Vendedor" : "Editor")+"</td>"+
+        "<td>"+chaveCrm(papel)+"</td>"+
+        '<td class="num">'+contarLeadsGuardados(papel)+"</td></tr>";
+    }).join("")+"</tbody></table></div>";
+
   // O que está guardado agora, escrito por extenso — para ninguém esquecer
   // que escondeu algo três meses atrás.
   var resumo = ["vendedor","editor"].map(function(papel){
-    var fora = telasEscondidas(papel);
+    var fora = telasEscondidas(papel).map(function(t){ return esc(t.n); });
+    var nLeads = contarLeadsGuardados(papel);
+    if(nLeads) fora.push(nLeads+" lead(s) do Controlead");
     if(!fora.length) return null;
-    return "<b>"+(papel === "vendedor" ? "Vendedor" : "Editor")+"</b> não vê: "+
-      fora.map(function(t){ return esc(t.n); }).join(", ")+".";
+    return "<b>"+(papel === "vendedor" ? "Vendedor" : "Editor")+"</b> não vê: "+fora.join(", ")+".";
   }).filter(Boolean);
   if(resumo.length){
     h += '<hr class="sep">'+callout("info","olhoRiscado", resumo.join("<br>"));
@@ -4280,6 +4369,17 @@ function admPipeline(){
     "nunca os valores. Nenhum nome ou telefone de candidato aparece, então dá para copiar "+
     "esse resultado e mandar para quem estiver ajudando a configurar.</p>";
   return h;
+}
+
+// Uma chave de dois estados, que grava no clique. Não fica dentro do
+// formulário de Salvar de propósito: chave que precisa de "salvar" depois
+// é a que a pessoa acha que virou e não virou.
+function chaveCrm(papel){
+  var ativo = ((VISIBILIDADE().leadsCrm||{})[papel]) !== false;
+  return '<button class="chave'+(ativo?" chave-on":"")+'" data-action="crm-chave" '+
+    'data-papel="'+esc(papel)+'" role="switch" aria-checked="'+(ativo?"true":"false")+'">'+
+    '<span class="chave-trilho"><span class="chave-bola"></span></span>'+
+    '<span class="chave-rot">'+(ativo? "Aparecem" : "Guardados")+"</span></button>";
 }
 
 function seletorPill(atual, i){
@@ -5331,17 +5431,37 @@ function handle(action, el){
       break;
     }
     case "telas-salvar": {
-      var vt = {vendedor:{}, editor:{}};
+      var vt = {vendedor:{}, editor:{}, leadsCrm:{}};
       document.querySelectorAll("[data-tela]").forEach(function(cx){
         if(!cx.checked) vt[cx.dataset.papel][cx.dataset.tela] = false;
       });
+      document.querySelectorAll("[data-leadcrm]").forEach(function(cx){
+        if(!cx.checked) vt.leadsCrm[cx.dataset.leadcrm] = false;
+      });
       db.set("visibilidade", vt); render();
       var quantas = Object.keys(vt.vendedor).length + Object.keys(vt.editor).length;
-      toast(quantas? (quantas+" área(s) guardada(s). Nada foi apagado.") : "Todas as áreas abertas.");
+      var comLeads = Object.keys(vt.leadsCrm).length;
+      toast(quantas || comLeads
+        ? (quantas? quantas+" área(s) guardada(s)" : "Áreas abertas") +
+          (comLeads? ", e os leads do Controlead guardados" : "") + ". Nada foi apagado."
+        : "Tudo aberto.");
+      break;
+    }
+    case "crm-chave": {
+      var vc = clonar(VISIBILIDADE());
+      var pp = el.dataset.papel;
+      vc.leadsCrm = vc.leadsCrm || {};
+      if(vc.leadsCrm[pp] === false) delete vc.leadsCrm[pp];
+      else vc.leadsCrm[pp] = false;
+      db.set("visibilidade", vc); render();
+      var guardados = contarLeadsGuardados(pp);
+      toast(vc.leadsCrm[pp] === false
+        ? (guardados + " lead(s) do Controlead guardados do " + pp + ". Nada foi apagado.")
+        : ("Os leads do Controlead voltaram a aparecer para o " + pp + "."));
       break;
     }
     case "telas-tudo":
-      db.set("visibilidade", {vendedor:{}, editor:{}});
+      db.set("visibilidade", {vendedor:{}, editor:{}, leadsCrm:{}});
       render(); toast("Todas as áreas voltaram a aparecer.");
       break;
     case "testar-controlead": diagnosticoControlead(); break;
