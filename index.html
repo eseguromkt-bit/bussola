@@ -656,6 +656,14 @@
   .acesso-erro[hidden]{display:none;}
   .acesso-card .field{margin-bottom:13px;}
   .acesso-aviso{margin:18px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-faint);text-align:center;}
+  /* ---- a IA pensando ---- */
+  .ia-esperando{display:flex;align-items:center;gap:11px;color:var(--ink-faint);font-size:14px;padding:18px 2px;}
+  .ia-pontos{display:inline-flex;gap:4px;flex:0 0 auto;}
+  .ia-pontos i{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulsar 1.1s ease-in-out infinite;}
+  .ia-pontos i:nth-child(2){animation-delay:.15s;}
+  .ia-pontos i:nth-child(3){animation-delay:.3s;}
+  @keyframes pulsar{0%,60%,100%{opacity:.25;transform:scale(.8);}30%{opacity:1;transform:scale(1);}}
+
   /* ---- campo com olhinho ---- */
   .campo-senha{position:relative;}
   .campo-senha input{padding-right:46px;}
@@ -1505,6 +1513,7 @@ var saveTimer = null;
 function estadoPadrao(){
   return {consultorNome:"", leads:[], activeLeadId:null, favoritos:{},
           usuarios:[], sessaoId:null, conteudo:{}, conteudoAtualizadoEm:null, equipe:[],
+          meusScripts:{},          // as mensagens que ESTA pessoa reescreveu
           migrar:null, migrouEm:null, ultimaSessaoNuvem:null};
 }
 function nowISO(){ return new Date().toISOString(); }
@@ -2873,6 +2882,115 @@ function fSelect(label, bind, opts, ph){
     "</select></label>";
 }
 
+/* ---------------------------------------------------------------------
+   MINHAS MENSAGENS — a versão pessoal de cada vendedor
+
+   No atendimento ao vivo, cada pessoa pode reescrever qualquer mensagem
+   do jeito que ela fala. A versão dela vale SÓ PARA ELA: não muda o
+   roteiro da empresa e não chega em mais ninguém.
+
+   Onde isso mora: na tabela `preferencias`, uma linha por usuário, com
+   RLS que só deixa o dono ler e escrever — nem o administrador enxerga.
+   É jeito de falar, não é dado da operação; o que a gestão acompanha
+   continua em `leads`.
+
+   Não podia ficar na coleção `conteudo` porque ela é compartilhada e só
+   administrador e editor escrevem nela: um vendedor editando ali seria
+   recusado pelo RLS, ou mudaria a mensagem de todo mundo.
+   --------------------------------------------------------------------- */
+
+function minhasMensagens(){
+  if(!state.meusScripts) state.meusScripts = {};
+  return state.meusScripts;
+}
+
+// O texto que ESTA pessoa vê. Sem versão própria, é o da empresa.
+function textoDaEmpresa(id){
+  var s = scriptById(id);
+  return s ? s.texto : "";
+}
+function minhaVersao(id){
+  var m = minhasMensagens()[id];
+  return m && typeof m.texto === "string" ? m.texto : null;
+}
+function textoScript(id){
+  var meu = minhaVersao(id);
+  // A versão pessoal já foi escrita com o nome do candidato à mostra, e
+  // ainda assim passa pelo preencher(): quem quiser manter {{nome}} no
+  // texto continua podendo.
+  return preencher(meu != null ? meu : textoDaEmpresa(id));
+}
+
+// Guarda o texto da empresa de quando a pessoa adaptou. Serve para
+// avisar depois, se a empresa mudar o roteiro e a versão dela ficar para
+// trás — sem sobrescrever nada por conta própria.
+function salvarMinhaVersao(id, texto){
+  var m = minhasMensagens();
+  if(texto == null || !String(texto).trim()){
+    delete m[id];
+  } else {
+    m[id] = {texto: String(texto), base: textoDaEmpresa(id), em: nowISO()};
+  }
+  state.meusScripts = m;
+  saveStateNow();
+  if(typeof nuvem !== "undefined" && nuvem.ativo && nuvem.perfil) nuvem.salvarPreferencias();
+}
+function empresaMudouDepois(id){
+  var m = minhasMensagens()[id];
+  return !!(m && typeof m.base === "string" && m.base !== textoDaEmpresa(id));
+}
+
+/* Bloco de mensagem do atendimento: o texto, o que fazer com ele, e o
+   aviso de que é versão sua. Usado em todas as etapas, para o vendedor
+   não precisar aprender dois jeitos diferentes de editar. */
+function blocoScript(id, opc){
+  opc = opc || {};
+  var texto = textoScript(id);
+  var meu = minhaVersao(id) != null;
+  var s = scriptById(id);
+  return '<div class="msg" data-msg="'+esc(id)+'">'+
+    (opc.titulo !== false
+      ? '<div class="row-between" style="margin-bottom:6px;gap:8px;">'+
+          '<b style="font-size:13.5px;">'+esc(opc.titulo || (s? s.titulo : ""))+"</b>"+
+          (meu? '<span class="pill pill-accent">sua versão</span>' : "")+"</div>"
+      : (meu? '<div class="row" style="margin-bottom:6px;"><span class="pill pill-accent">sua versão</span></div>' : ""))+
+    '<div class="script-block"'+(opc.dourado? ' style="border-left-color:var(--gold);"':"")+">"+esc(texto)+"</div>"+
+    (empresaMudouDepois(id)
+      ? '<p class="faint" style="margin:-4px 0 8px;">A empresa mudou esta mensagem depois que você adaptou a sua. '+
+        '<button class="btn btn-sm btn-ghost" data-action="ver-original" data-id="'+esc(id)+'">Ver a da empresa</button></p>'
+      : "")+
+    '<div class="row" style="flex-wrap:wrap;">'+
+      copiaBtn(texto, opc.rotuloCopiar || "Copiar")+
+      '<button class="btn btn-sm btn-ghost" data-action="editar-msg" data-id="'+esc(id)+'">'+
+        ico("chave",13)+(meu? "Editar a sua" : "Editar")+"</button>"+
+      (meu? '<button class="btn btn-sm btn-ghost" data-action="restaurar-msg" data-id="'+esc(id)+'">'+
+            ico("ciclo",13)+"Voltar à da empresa</button>" : "")+
+    "</div></div>";
+}
+
+function abrirEditorMensagem(id){
+  var s = scriptById(id);
+  var atual = minhaVersao(id);
+  var daEmpresa = textoDaEmpresa(id);
+  openModal("Editar: "+((s && s.titulo) || "mensagem"),
+    '<p class="muted" style="margin:0 0 12px;font-size:13.8px;">'+
+      "Esta versão é <b>sua</b>. Ela não muda a mensagem da equipe e ninguém mais vai vê-la — "+
+      "nem o administrador. Vale em todos os seus atendimentos, neste e nos próximos.</p>"+
+    '<label class="field">Sua mensagem'+
+      '<textarea id="msgTexto" rows="9" style="min-height:170px;">'+esc(atual != null ? atual : daEmpresa)+"</textarea>"+
+      '<span class="hint">Pode usar {{nome}}, {{consultor}} e {{cidade}} — o app troca pelo dado do atendimento.</span></label>'+
+    '<details style="margin-top:10px;"><summary class="faint" style="cursor:pointer;font-size:13px;">Ver a mensagem da empresa</summary>'+
+      '<div class="script-block" style="margin-top:8px;">'+esc(daEmpresa)+"</div></details>"+
+    '<div class="row" style="justify-content:flex-end;margin-top:16px;flex-wrap:wrap;">'+
+      (atual != null ? '<button class="btn" data-action="restaurar-msg" data-id="'+esc(id)+'">Voltar à da empresa</button>' : "")+
+      '<button class="btn" data-action="close-modal">Cancelar</button>'+
+      '<button class="btn btn-primary" data-action="salvar-msg" data-id="'+esc(id)+'">Salvar a minha</button></div>');
+  setTimeout(function(){
+    var t = document.getElementById("msgTexto");
+    if(t){ t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  }, 30);
+}
+
 function etapaBody(n, l){
   switch(n){
     case 1:
@@ -2882,10 +3000,7 @@ function etapaBody(n, l){
     case 2:
       return '<p class="muted" style="font-size:13.5px;margin-bottom:10px;">Escolha o canal e envie. O texto já vem com o nome do candidato.</p>'+
         '<div class="stack">'+["wa-qualifica","wa-curta","lig-abertura","nao-atende"].map(function(id){
-          var s=scriptById(id);
-          return '<div class="card" style="padding:12px 14px;"><div class="row-between"><b style="font-size:13.5px;">'+esc(s.titulo)+"</b>"+
-            '<div class="row">'+copiaBtn(preencher(s.texto),"Copiar")+
-            '<button class="btn btn-sm btn-ghost" data-action="ver-script" data-id="'+id+'">Ver</button></div></div></div>';
+          return '<div class="card" style="padding:12px 14px;">'+blocoScript(id)+"</div>";
         }).join("")+"</div>";
     case 3:
       return '<p class="muted" style="font-size:13.5px;margin-bottom:10px;">Pergunte antes de apresentar. Preencha conforme a conversa avança.</p>'+
@@ -2912,10 +3027,11 @@ function etapaBody(n, l){
             '<p class="muted" style="font-size:13px;margin:8px 0 4px;">'+esc(q.criterio)+"</p>"+
             '<p style="font-size:13px;margin:0;"><b>'+esc(q.acao)+"</b></p></div>";
         }).join("")+"</div>"+
-        (l.qualificacao==="Desqualificado" ? ('<div class="script-block">'+esc(scriptById("desqualifica").texto)+"</div>"+copiaBtn(scriptById("desqualifica").texto,"Copiar desqualificação educada")) : "");
+        (l.qualificacao==="Desqualificado"
+          ? blocoScript("desqualifica", {rotuloCopiar:"Copiar desqualificação educada"}) : "");
     case 5:
-      return '<div class="script-block">'+esc(scriptById("inst-60").texto)+"</div>"+
-        '<div class="row" style="margin-bottom:12px;">'+copiaBtn(scriptById("inst-60").texto,"Copiar institucional")+
+      return blocoScript("inst-60", {titulo:false, rotuloCopiar:"Copiar institucional"})+
+        '<div class="row" style="margin-bottom:12px;">'+
         '<button class="btn btn-sm btn-ghost" data-action="ir" data-view="grupo">Abrir ficha do Grupo</button></div>'+
         '<div class="grid grid-stats">'+INSTITUCIONAL().fatos.map(function(f){
           return '<div class="stat" style="padding:11px 13px;"><div class="stat-num" style="font-size:18px;">'+esc(f.valor)+"</div>"+
@@ -2957,7 +3073,7 @@ function etapaBody(n, l){
         }).join("")+"</div>"+
         fInput("Por que este modelo combina com ele?","modeloMotivo",{type:"textarea"})+
         callout("accent","dinheiro","Reforce: <b>sem royalty mínimo e sem taxa de marketing</b>. O custo recorrente acompanha a produção. Contrato de "+MODELO_COMUM().contrato+", treinamento de "+MODELO_COMUM().treinamento+".")+
-        '<div class="row">'+copiaBtn(scriptById("royalties").texto,"Copiar explicação de royalties")+"</div>";
+        blocoScript("royalties", {rotuloCopiar:"Copiar explicação de royalties"});
     case 8:
       return '<p class="muted" style="font-size:13.5px;margin-bottom:10px;">Escolha um produto do ramo que ele demonstrou interesse e simule na frente dele.</p>'+
         renderCalcWidget();
@@ -2984,8 +3100,9 @@ function etapaBody(n, l){
         fInput("Data do próximo contato","proximaData",{type:"date"})+
         fInput("Material que será enviado","materialEnviado")+
         "</div>"+
-        '<div class="row" style="margin-top:6px;">'+copiaBtn(preencher(scriptById("fech-reuniao").texto),"Copiar fechamento")+
-        copiaBtn(preencher(scriptById("fech-escolha").texto),"Fechamento por escolha")+"</div>"+
+        '<div class="stack" style="margin-top:10px;">'+
+        blocoScript("fech-reuniao", {rotuloCopiar:"Copiar fechamento"})+
+        blocoScript("fech-escolha", {rotuloCopiar:"Copiar este"})+"</div>"+
         callout("warn","aviso","Nunca encerre uma conversa sem próximo passo <b>e</b> data definidos.");
     case 12:
       var resumo = "Obrigado pela conversa, "+(l.nome||"[NOME]")+". Resumo: seu objetivo é "+(l.diag.motivacao||"[objetivo]")+
@@ -2997,9 +3114,7 @@ function etapaBody(n, l){
         fInput("Notas gerais do atendimento","notas",{type:"textarea"})+
         '<hr class="sep"><p class="muted" style="font-size:13.5px;">Cadência sugerida:</p>'+
         '<div class="stack">'+["fup-1","fup-2","fup-3","fup-7d","reativacao"].map(function(id){
-          var s=scriptById(id);
-          return '<div class="card" style="padding:11px 13px;"><div class="row-between"><b style="font-size:13px;">'+esc(s.titulo)+"</b>"+
-            copiaBtn(preencher(s.texto),"Copiar")+"</div></div>";
+          return '<div class="card" style="padding:11px 13px;">'+blocoScript(id)+"</div>";
         }).join("")+"</div>";
     default: return "";
   }
@@ -4050,6 +4165,9 @@ function mostrarAcesso(){
     }
   }
 
+  // uma contagem regressiva de uma tentativa anterior não pode continuar
+  // viva: ela reescreveria o rótulo do botão desta tela
+  if(_contagem){ clearInterval(_contagem); _contagem = null; }
   document.getElementById("acessoErro").hidden = true;
   document.getElementById("acessoBtn").disabled = false;
   document.getElementById("acessoBtn").classList.remove("btn-carregando");
@@ -4066,9 +4184,52 @@ function mostrarAcesso(){
     if(f) f.focus();
   },30);
 }
-function erroAcesso(msg){
-  var e=document.getElementById("acessoErro");
-  e.textContent = msg; e.hidden = false;
+var _contagem = null;
+function erroAcesso(msg, opc){
+  opc = opc || {};
+  var e = document.getElementById("acessoErro");
+  var btn = document.getElementById("acessoBtn");
+  if(_contagem){ clearInterval(_contagem); _contagem = null; }
+  if(opc.comoHtml) e.innerHTML = msg; else e.textContent = msg;
+  e.hidden = false;
+
+  // Erro de "já existe conta": um clique leva para a tela de entrar já
+  // com o e-mail preenchido. É a causa mais comum de tentar de novo.
+  if(opc.irParaEntrar){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn btn-sm";
+    b.style.cssText = "margin-top:10px;";
+    b.textContent = "Entrar com este e-mail";
+    b.onclick = function(){
+      ui.acessoModo = "entrar";
+      mostrarAcesso();
+      var c = document.getElementById("acEmail");
+      if(c) c.value = opc.irParaEntrar;
+      var sn = document.getElementById("acSenha");
+      if(sn) sn.focus();
+    };
+    e.appendChild(document.createElement("br"));
+    e.appendChild(b);
+  }
+
+  // Espera com fim à vista: o botão volta sozinho quando o tempo acaba,
+  // em vez de deixar a pessoa clicando e levando o mesmo erro.
+  if(opc.esperaSegundos > 0 && btn){
+    var resta = opc.esperaSegundos;
+    var txt = btn.textContent;
+    btn.disabled = true;
+    var tique = function(){
+      btn.textContent = "Aguarde " + resta + "s";
+      if(resta <= 0){
+        clearInterval(_contagem); _contagem = null;
+        btn.disabled = false; btn.textContent = txt;
+      }
+      resta--;
+    };
+    tique();
+    _contagem = setInterval(tique, 1000);
+  }
 }
 function entrarApp(){
   document.getElementById("acesso").hidden = true;
@@ -4152,6 +4313,7 @@ function submeterAcessoNuvem(){
   }).catch(function(err){
     btn.disabled = false; btn.classList.remove("btn-carregando"); btn.textContent = txtOriginal;
     var m = String((err && err.message) || "");
+    var cod = String((err && err.code) || "");
     if(m === "confirme-email")
       return erroAcesso("Conta criada. Confirme o e-mail que você recebeu e depois entre por aqui.");
     if(m === "sem-perfil")
@@ -4160,14 +4322,30 @@ function submeterAcessoNuvem(){
       return erroAcesso("Sua conta está desativada. Fale com o administrador de expansão.");
     if(/Invalid login/i.test(m))
       return erroAcesso("E-mail ou senha incorretos.");
-    if(/already registered|already been registered/i.test(m))
-      return erroAcesso("Já existe uma conta com esse e-mail. Use “Já tenho conta — entrar”.");
+    if(/already registered|already been registered/i.test(m) || cod === "user_already_exists" || cod === "email_exists")
+      return erroAcesso("Já existe uma conta com esse e-mail.", {irParaEntrar: email});
     if(/Email .*invalid|invalid format/i.test(m))
       return erroAcesso("Este e-mail não foi aceito pelo servidor. Confira se está escrito certo.");
-    if(/rate limit|too many/i.test(m))
-      return erroAcesso("Muitas tentativas seguidas. Espere um minuto e tente de novo.");
+    if(cod === "over_email_send_rate_limit" || /email rate limit|email send rate/i.test(m))
+      return erroAcesso(
+        "O Supabase parou de enviar e-mails: o provedor embutido dele solta só <b>2 por hora</b>, "+
+        "e cada conta criada gasta um.<br><br>Isso não é limite do app, e some de vez desligando a "+
+        "confirmação de e-mail: <b>Authentication → Sign In / Providers → Email → Confirm email</b>.",
+        {esperaSegundos: esperaDoErro(m) || 0, comoHtml: true});
+    if(cod === "over_request_rate_limit" || /rate limit|too many|only request this after/i.test(m)){
+      var seg = esperaDoErro(m);
+      return erroAcesso(seg
+        ? "O servidor pediu para esperar antes da próxima tentativa."
+        : "Muitas tentativas seguidas. O servidor pediu um intervalo.", {esperaSegundos: seg || 60});
+    }
     erroAcesso(m || "Não consegui falar com o servidor. Confira sua conexão.");
   });
+}
+
+// "For security purposes, you can only request this after 34 seconds."
+function esperaDoErro(msg){
+  var m = /after (\d+) seconds?/i.exec(String(msg||""));
+  return m ? parseInt(m[1], 10) : 0;
 }
 
 function sair(){
@@ -4175,6 +4353,7 @@ function sair(){
     nuvem.sairDaConta().then(function(){
       nuvem.perfil = null; nuvem.perfis = []; nuvem.espelho = {};
       state.leads = []; state.usuarios = []; state.sessaoId = null; state.activeLeadId = null;
+      state.meusScripts = {};        // a versão é de quem estava logado, não do computador
       state.ultimaSessaoNuvem = null;
       saveStateNow();
       ui.acessoModo = "entrar";
@@ -4423,6 +4602,35 @@ function handle(action, el){
     case "fechar-ramo": ui.ramoAberto = null; ui.produtoAberto = null; render(); break;
 
     case "script-cat": ui.scriptCat = el.dataset.cat; render(); break;
+    case "editar-msg":
+      abrirEditorMensagem(el.dataset.id);
+      break;
+
+    case "salvar-msg": {
+      var idMsg = el.dataset.id;
+      var t = document.getElementById("msgTexto");
+      if(!t) return;
+      var novo = t.value;
+      if(!novo.trim()) return toast("Escreva a mensagem ou volte à da empresa.");
+      // igual à da empresa não é versão: é só não ter versão nenhuma
+      salvarMinhaVersao(idMsg, novo.trim() === textoDaEmpresa(idMsg).trim() ? null : novo);
+      closeModal(); render();
+      toast("Salvo. Esta versão é só sua.");
+      break;
+    }
+
+    case "restaurar-msg":
+      salvarMinhaVersao(el.dataset.id, null);
+      closeModal(); render();
+      toast("Voltou para a mensagem da equipe.");
+      break;
+
+    case "ver-original": {
+      var so = scriptById(el.dataset.id);
+      openTexto("Mensagem da equipe — "+((so && so.titulo)||""), preencher(textoDaEmpresa(el.dataset.id)));
+      break;
+    }
+
     case "ver-script": {
       var s = scriptById(el.dataset.id);
       if(s) openTexto(s.titulo, preencher(s.texto));
@@ -4508,6 +4716,22 @@ function handle(action, el){
       // o IBGE é complemento: a tela já está montada quando ele chega
       tentarIbge(el.dataset.c);
       break;
+
+    case "abordagem-ia":
+      modalAbordagem(el.dataset.c, "whatsapp");
+      break;
+
+    case "abordagem-tom": {
+      var tomEsc = el.dataset.t;
+      document.querySelectorAll('[data-action="abordagem-tom"].tag-btn').forEach(function(b){
+        b.classList.toggle("active", b.dataset.t === tomEsc);
+      });
+      var saida = document.getElementById("iaSaida");
+      if(saida) saida.innerHTML = '<div class="ia-esperando">'+
+        '<span class="ia-pontos"><i></i><i></i><i></i></span>Escrevendo…</div>';
+      rodarAbordagem(el.dataset.c, tomEsc);
+      break;
+    }
 
     case "copiar-geo":
       tryCopy(resumoGeoTexto(el.dataset.c));
@@ -6376,8 +6600,11 @@ var REGRAS_GEO = [
         forca: forte ? "alta" : "média",
         titulo: "Praça do agro",
         evidencia: provas.join(" · "),
-        ramos: ["seguros","financeiro","diversos"],
-        chaves: ["rural","agro","maquin","consorcio","caminh","imov","vida","patrimon"],
+        ramos: ["seguros","consorcio","financeiro","diversos"],
+        // "consorcio" sozinho puxaria as quatro modalidades de uma vez e
+        // encheria a lista. "maquin", "caminh" e "imov" já pegam as que
+        // interessam ao produtor — máquina, pesados e terra.
+        chaves: ["rural","agro","maquin","caminh","imov","vida","patrimon"],
         fala: c.m.nome + " é praça de agro — " + provas[0] + ". Quem produz aí compra máquina, caminhão e terra, "+
               "e o consórcio é a forma como isso é financiado. Seguro rural e de vida entram junto, porque o "+
               "produtor sabe o tamanho do risco dele melhor do que ninguém."
@@ -6420,8 +6647,10 @@ var REGRAS_GEO = [
         titulo: "Base residencial para trabalhar",
         evidencia: fmtNum(d) + " domicílios ocupados" +
                    (c.ind.densidade > 0 ? " · " + fmtNum(c.ind.densidade) + " hab/km²" : ""),
-        ramos: ["seguros","financeiro"],
-        chaves: ["residencial","resid","casa","imov","consorcio","imobil"],
+        ramos: ["seguros","consorcio","financeiro"],
+        // "imov" já alcança o Consórcio Imóvel; "consorcio" traria junto
+        // o de automóvel e o de pesados, que não têm nada com domicílio.
+        chaves: ["residencial","resid","casa","imov","imobil"],
         fala: "São " + fmtNum(d) + " domicílios em " + c.m.nome +
               ". Seguro residencial e consórcio de imóvel trabalham essa base — é venda de porta em porta que não depende de o cliente ter empresa nem carro."
       };
@@ -6561,9 +6790,21 @@ function produtosSugeridos(ctx){
       });
     });
   }
-  return Object.keys(pontos).map(function(k){ return pontos[k]; })
-    .sort(function(a,b){ return b.peso - a.peso; })
-    .slice(0, 8);
+  // O mesmo produto existe em mais de um ramo de propósito — "Consórcio
+  // Imóvel" está em Consórcio e em Financeiro, como o Agro já repete o
+  // seguro rural. Na tela do vendedor isso viraria a mesma linha duas
+  // vezes. Aqui as duas viram uma só: soma o peso, junta os porquês e
+  // fica com a primeira, que é a do ramo mais específico (RAMOS() vem na
+  // ordem em que os segmentos aparecem no app).
+  var porNome = {}, unicos = [];
+  Object.keys(pontos).forEach(function(k){
+    var reg = pontos[k], nome = normalizar(reg.prod.p);
+    var ja = porNome[nome];
+    if(!ja){ porNome[nome] = reg; unicos.push(reg); return; }
+    ja.peso += reg.peso;
+    reg.porques.forEach(function(p){ if(ja.porques.indexOf(p) < 0) ja.porques.push(p); });
+  });
+  return unicos.sort(function(a,b){ return b.peso - a.peso; }).slice(0, 8);
 }
 
 /* ---------------------------------------------------------------------
@@ -6621,7 +6862,13 @@ function painelGeo(a){
     '<h2 style="font-size:23px;margin:0;">'+esc(m.nome)+' <span class="faint" style="font-size:16px;">'+m.uf+"</span></h2>"+
     '<p class="faint" style="margin:4px 0 0;">código IBGE '+m.cod+
       (ehSede(m)? ' · <span class="pill pill-warning">praça-sede</span>' : "")+"</p></div>"+
-    '<button class="btn btn-sm" data-action="copiar-geo" data-c="'+m.cod+'">'+ico("balao",14)+"Copiar resumo</button></div>";
+    '<div class="row" style="flex-wrap:wrap;">'+
+      (podeUsarIA()
+        ? '<button class="btn btn-sm btn-primary" data-action="abordagem-ia" data-c="'+m.cod+'">'+
+            ico("raio",14)+"Escrever a abordagem</button>"
+        : "")+
+      '<button class="btn btn-sm" data-action="copiar-geo" data-c="'+m.cod+'">'+
+        ico("balao",14)+"Copiar resumo</button></div></div>";
 
   if(ehSede(m)){
     h += callout("warn","aviso","Esta é uma <b>praça-sede</b>: o mix de produtos daqui não representa o comportamento normal de mercado, porque concentra pilotos e operação própria. Use os números com essa ressalva.");
@@ -6714,6 +6961,148 @@ function painelGeo(a){
       esc((conf.naoUsar||[]).slice(0,3).join(" · ")))+"</div>";
   }
   return h;
+}
+
+/* =====================================================================
+   IA — "Escrever a abordagem"
+
+   A chave da IA NÃO está aqui, e não pode estar: este arquivo vai para
+   um repositório público no GitHub. Quem guarda a chave é uma função no
+   Supabase (supabase/functions/abordagem), que só responde a quem está
+   logado. Daqui sai fato, de lá volta texto.
+
+   Se a função não estiver publicada, ou a cota tiver acabado, ou não
+   houver internet, o Raio-X continua inteiro — some só o botão.
+   ===================================================================== */
+
+var IA_DISPONIVEL = null;   // null = ainda não sabemos; true/false depois
+var IA_MOTIVO = "";         // por que foi desligada, quando foi
+
+// Falha permanente (falta publicar, falta a chave) esconde o botão: é
+// melhor não oferecer do que oferecer algo que nunca vai funcionar.
+// Falha passageira (cota, rede) mantém — amanhã funciona.
+function desligarIA(motivo){ IA_DISPONIVEL = false; IA_MOTIVO = motivo; }
+
+function podeUsarIA(){
+  return naNuvem() && IA_DISPONIVEL !== false;
+}
+
+// Os fatos que a função recebe. Só o que já está na tela — nada de
+// texto livre digitado por quem usa, senão a função vira um chatbot
+// aberto rodando na conta da empresa.
+function fatosDaPraca(a, tom){
+  var conf = CONFORMIDADE();
+  return {
+    cidade: a.m.nome,
+    uf: a.m.uf,
+    tom: tom || "whatsapp",
+    franquiasNaCidade: a.naCidade,
+    franquiasNoEstado: a.noEstado,
+    sinais: (a.sinais||[]).slice(0,6).map(function(s){
+      return {titulo: s.titulo, evidencia: s.evidencia};
+    }),
+    produtos: (a.produtos||[]).slice(0,5).map(function(x){ return x.prod.p; }),
+    mix: a.mix && a.mix.suficiente
+      ? a.mix.itens.slice(0,4).map(function(it){ return it.nome+" ("+it.pctAqui+"% das franquias daqui)"; })
+      : [],
+    naoUsar: (conf.naoUsar||[]).slice(0,6)
+  };
+}
+
+function pedirAbordagem(cod, tom){
+  var m = municipioPorCodigo(cod);
+  if(!m) return Promise.reject(new Error("cidade"));
+  if(!naNuvem()) return Promise.reject(new Error("sem-nuvem"));
+  var fatos = fatosDaPraca(analisarPraca(m), tom);
+  return nuvem.sb.functions.invoke("abordagem", {body: fatos}).then(function(r){
+    // O supabase-js devolve {data, error}. Quando a função responde com
+    // status de erro, o corpo útil vem em error.context — é lá que está
+    // a explicação que interessa mostrar.
+    if(r.error){
+      return lerErroFuncao(r.error).then(function(info){ throw info; });
+    }
+    if(r.data && r.data.erro) throw {tipo: r.data.erro, dica: r.data.dica};
+    if(!r.data || !r.data.texto) throw {tipo: "vazio"};
+    IA_DISPONIVEL = true; IA_MOTIVO = "";
+    return r.data.texto;
+  });
+}
+
+function lerErroFuncao(err){
+  var ctx = err && err.context;
+  var status = (ctx && ctx.status) || 0;
+  if(status === 404){ desligarIA("nao-publicada"); return Promise.resolve({tipo:"nao-publicada"}); }
+  if(!ctx || typeof ctx.json !== "function")
+    return Promise.resolve({tipo: status === 401 ? "sem-acesso" : "rede", status: status});
+  return ctx.json().then(function(j){
+    if(j && j.erro === "sem-chave") desligarIA("sem-chave");
+    return {tipo: (j && j.erro) || "rede", dica: j && j.dica, status: status};
+  }).catch(function(){ return {tipo:"rede", status: status}; });
+}
+
+var TONS_IA = [
+  {k:"whatsapp", n:"WhatsApp"},
+  {k:"ligacao",  n:"Ligação"},
+  {k:"email",    n:"E-mail"}
+];
+
+function modalAbordagem(cod, tom){
+  tom = tom || "whatsapp";
+  var m = municipioPorCodigo(cod);
+  if(!m) return;
+  openModal("Abordagem para "+m.nome,
+    '<div class="row" style="margin-bottom:14px;flex-wrap:wrap;">'+
+      TONS_IA.map(function(t){
+        return '<button class="tag-btn'+(t.k===tom?" active":"")+'" data-action="abordagem-tom" '+
+          'data-c="'+cod+'" data-t="'+t.k+'">'+esc(t.n)+"</button>";
+      }).join("")+"</div>"+
+    '<div id="iaSaida"><div class="ia-esperando">'+
+      '<span class="ia-pontos"><i></i><i></i><i></i></span>'+
+      "Lendo os sinais de "+esc(m.nome)+" e escrevendo…</div></div>");
+  rodarAbordagem(cod, tom);
+}
+
+function rodarAbordagem(cod, tom){
+  pedirAbordagem(cod, tom).then(function(texto){
+    var el = document.getElementById("iaSaida");
+    if(!el) return;
+    el.innerHTML = '<div class="script-block" style="white-space:pre-wrap;font-size:14.3px;">'+
+        esc(texto)+"</div>"+
+      '<div class="row" style="margin-top:12px;flex-wrap:wrap;">'+
+        copiaBtn(texto, "Copiar")+
+        '<button class="btn btn-sm" data-action="abordagem-tom" data-c="'+cod+'" data-t="'+tom+'">'+
+          ico("ciclo",14)+"Escrever outra</button></div>"+
+      '<p class="faint" style="margin:12px 0 0;line-height:1.6;">Escrito por IA a partir dos sinais desta tela. '+
+        "<b>Leia antes de mandar</b> — quem assina a mensagem é você, e a conformidade continua valendo.</p>";
+  }).catch(function(e){
+    var el = document.getElementById("iaSaida");
+    if(!el) return;
+    el.innerHTML = '<div class="callout callout-warn"><div>'+explicarErroIA(e)+"</div></div>";
+  });
+}
+
+function explicarErroIA(e){
+  var t = (e && e.tipo) || "rede";
+  if(t === "nao-publicada")
+    return "<b>A função de IA ainda não foi publicada no Supabase.</b><br>"+
+      "Ela é o que guarda a chave sem expor no site. O passo a passo está no arquivo "+
+      "<b>supabase/functions/abordagem</b>, no repositório.";
+  if(t === "sem-chave")
+    return "<b>Falta a chave da IA no Supabase.</b><br>"+
+      esc((e && e.dica) || "Painel do Supabase → Edge Functions → Secrets → GEMINI_API_KEY.");
+  if(t === "cota")
+    return "<b>A cota gratuita da IA acabou por agora.</b><br>"+
+      "Ela volta sozinha. O Raio-X inteiro continua funcionando — a IA só escreve o texto, "+
+      "os sinais e os números não dependem dela.";
+  if(t === "sem-acesso")
+    return "<b>Sua sessão expirou.</b><br>Saia e entre de novo.";
+  if(t === "sem-nuvem")
+    return "<b>Sem conexão com o banco.</b><br>A IA precisa da função no Supabase, que não roda offline.";
+  if(t === "vazio")
+    return "<b>A IA não devolveu texto.</b><br>Tente de novo, ou mude o formato.";
+  return "<b>Não consegui falar com a IA.</b><br>"+
+    esc((e && e.dica) || "Confira a conexão e tente de novo.")+
+    "<br><span class=\"faint\">O resto da tela não depende disso.</span>";
 }
 
 function resumoGeoTexto(cod){
@@ -6820,6 +7209,22 @@ function admGeo(){
         var m = municipioPorCodigo(c); return m? m.nome+"/"+m.uf : c;
       }).join(", ") || "nenhuma")+"</dd></dl>"+
     '<p class="faint" style="margin:10px 0 0;">Praça-sede sai da comparação de mix: a matriz concentra pilotos e distorce a leitura.</p></div></div>';
+
+  // Estado da IA que escreve a abordagem. Fica aqui porque quem resolve
+  // é quem administra, e o vendedor não deve ver botão que não funciona.
+  h += '<div class="section"><div class="section-head"><h2>'+ico("raio",17)+"IA que escreve a abordagem</h2></div>"+
+    '<div class="card"><p class="muted" style="margin:0 0 10px;font-size:13.5px;">'+
+    "No Raio-X aparece o botão <b>Escrever a abordagem</b>: a IA lê os sinais da praça e escreve a mensagem "+
+    "para o vendedor mandar. A chave da IA <b>não fica no site</b> — ela vive numa função do Supabase, "+
+    "porque o código deste app é público e uma chave ali seria de quem quisesse pegar.</p>"+
+    '<dl class="kv"><dt>Situação</dt><dd>'+(
+      IA_DISPONIVEL === true  ? '<span class="pill pill-success">funcionando</span>' :
+      IA_MOTIVO === "nao-publicada" ? '<span class="pill pill-warning">função não publicada</span> — falta subir <b>supabase/functions/abordagem</b>' :
+      IA_MOTIVO === "sem-chave"     ? '<span class="pill pill-warning">sem chave</span> — falta o segredo <b>GEMINI_API_KEY</b> em Edge Functions → Secrets' :
+      '<span class="faint">ainda não foi usada nesta sessão</span>'
+    )+"</dd>"+
+    "<dt>Se a cota acabar</dt><dd>O botão continua lá e volta a funcionar sozinho. Os sinais e os números do Raio-X não dependem da IA.</dd>"+
+    "</dl></div></div>";
 
   // Diagnóstico da consulta ao vivo. Serve para você saber por que o
   // número do IBGE não apareceu, em vez de ficar adivinhando.
@@ -7759,7 +8164,40 @@ var nuvem = {
       if(perfil.ativo === false) throw new Error("inativo");
       perfil.email = session.user.email || perfil.email;
       if(!state.consultorNome) state.consultorNome = perfil.nome;
-      return Promise.all([nuvem.carregarConteudo(), nuvem.carregarLeads()]);
+      return Promise.all([nuvem.carregarConteudo(), nuvem.carregarLeads(),
+                          nuvem.carregarPreferencias()]);
+    });
+  },
+
+  /* ---------- as mensagens pessoais de quem está logado ----------
+     Uma linha por pessoa, protegida por RLS: só o dono lê e escreve.
+     Se a tabela ainda não existe (o meus-scripts.sql não rodou), isto
+     falha em silêncio e as edições ficam só neste navegador. */
+  carregarPreferencias: function(){
+    if(!nuvem.perfil) return Promise.resolve();
+    return nuvem.sb.from("preferencias").select("dados").eq("id", nuvem.perfil.id)
+      .maybeSingle().then(function(r){
+        if(r.error) throw r.error;
+        var d = (r.data && r.data.dados) || {};
+        state.meusScripts = d.scripts || {};
+      }).catch(function(){
+        nuvem.semPreferencias = true;   // some quando a tabela existir
+      });
+  },
+
+  salvarPreferencias: function(){
+    if(!nuvem.ativo || !nuvem.perfil) return Promise.resolve();
+    return nuvem.sb.from("preferencias").upsert({
+      id: nuvem.perfil.id,
+      dados: {scripts: state.meusScripts || {}},
+      atualizado_em: nowISO()
+    }, {onConflict:"id"}).then(function(r){
+      if(r.error) throw r.error;
+      nuvem.semPreferencias = false;
+    }).catch(function(){
+      // não vale interromper quem está no meio de um atendimento por
+      // causa disto: o texto já está salvo neste navegador
+      nuvem.semPreferencias = true;
     });
   },
 
