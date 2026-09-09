@@ -935,6 +935,20 @@
     overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
   }
 
+  /* A ficha do candidato: pares rótulo/valor que quebram em uma coluna no
+     celular. Sem tabela, porque tabela de dois campos não sobrevive a 390px. */
+  .ficha{margin-bottom:16px;}
+  .ficha-grade{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:11px 18px;
+  }
+  .ficha-item{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .ficha-rot{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--ink-faint);font-weight:700;
+  }
+  .ficha-val{font-size:14px;color:var(--ink);word-break:break-word;}
+
   /* Chave de dois estados. Verde/cinza não bastam: o rótulo ao lado diz
      em palavras o que está valendo, porque "ligado" só é óbvio para quem
      desenhou. */
@@ -1446,7 +1460,11 @@ var PIPELINE_BASE = {
   ],
   // "Etapa como o Controlead chama" -> "Coluna como a Bússola chama".
   // Só é preciso preencher o que não bate por nome igual.
-  dePara: {}
+  dePara: {},
+  // "Vendedor como o Controlead chama" -> id da conta na Bússola.
+  // Nome de CRM quase nunca é igual ao nome da conta, então isto existe
+  // para o administrador acertar à mão o que não casou sozinho.
+  vendedores: {}
 };
 
 /* -------------------------------------------------------------------------
@@ -1708,7 +1726,11 @@ var ui = {view:"inicio", openEtapas:{}, openAcc:{}, scriptCat:"Primeira abordage
           ramoAberto:null, calc:{}, buscaSel:0, buscaTermo:"", tema:"dark",
           // as etapas que o Controlead devolveu na última puxada, para o
           // de-para em Administração não ser adivinhação
-          etapasCrm:[]};
+          etapasCrm:[],
+          // a equipe como o Controlead a conhece, para o de-para
+          vendedoresCrm:[],
+          // período da última importação
+          crmDe:"", crmAte:""};
 var saveTimer = null;
 
 function estadoPadrao(){
@@ -3537,6 +3559,74 @@ function moverLead(id, coluna){
              : (l.nome + " → " + coluna));
 }
 
+/* -------------------------------------------------------------------------
+   A FICHA DO CANDIDATO
+
+   O vendedor abre o atendimento e a primeira coisa que precisa é saber com
+   quem está falando. Antes o cabeçalho tinha nome e cidade; o resto do que
+   o Controlead manda ficava guardado sem aparecer em lugar nenhum.
+   ------------------------------------------------------------------------- */
+var CAMPOS_FICHA = [
+  {c:"telefone",  r:"Telefone",  ico:"balao",    zap:true},
+  {c:"email",     r:"E-mail",    ico:"balao"},
+  {c:"cidade",    r:"Cidade",    ico:"loja"},
+  {c:"empresa",   r:"Empresa",   ico:"predio"},
+  {c:"endereco",  r:"Endereço",  ico:"loja"},
+  {c:"cep",       r:"CEP",       ico:"loja"},
+  {c:"origem",    r:"Origem",    ico:"alvo"},
+  {c:"funil",     r:"Funil no Controlead", ico:"escala"},
+  {c:"etiquetas", r:"Etiquetas", ico:"grade"},
+  {c:"valor",     r:"Valor no CRM", ico:"dinheiro", moeda:true}
+];
+
+function soDigitos(t){ return String(t||"").replace(/\D/g,""); }
+// Telefone brasileiro sem DDI tem 10 (fixo) ou 11 (celular) dígitos; com o
+// 55 na frente, 12 ou 13. Só acrescento o país no primeiro caso: pôr 55
+// num número que já tem, ou num internacional, monta um link que abre uma
+// conversa com o número errado — e ninguém confere link de WhatsApp.
+function linkZap(tel){
+  var d = soDigitos(tel);
+  if(d.length === 10 || d.length === 11) return "https://wa.me/55" + d;
+  if(d.length === 12 || d.length === 13) return "https://wa.me/" + d;
+  return "";     // fora disso não dá para afirmar nada
+}
+
+function fichaCandidato(l){
+  var itens = [];
+  CAMPOS_FICHA.forEach(function(f){
+    var v = l[f.c];
+    if(f.c === "cidade" && v && l.estado) v = v + " / " + l.estado;
+    if(!v) return;
+    if(f.moeda){
+      var n = Number(String(v).replace(",", "."));
+      if(!isFinite(n) || !n) return;
+      v = fmtDinheiro(n);
+    }
+    itens.push({r:f.r, v:String(v), ico:f.ico, zap:f.zap});
+  });
+  if(!itens.length) return "";
+
+  var zap = linkZap(l.telefone);
+  return '<div class="card ficha">'+
+    '<div class="section-head" style="margin:0 0 10px;"><h2 style="font-size:15px;">'+
+      ico("usuario",16)+"Ficha do candidato</h2>"+
+      (l.externoId? '<span class="pill pill-accent">veio do Controlead</span>' : "")+
+    "</div>"+
+    '<div class="ficha-grade">'+itens.map(function(i){
+      return '<div class="ficha-item"><span class="ficha-rot">'+esc(i.r)+"</span>"+
+        '<span class="ficha-val">'+esc(i.v)+"</span></div>";
+    }).join("")+"</div>"+
+    '<div class="row" style="margin-top:12px;">'+
+      (zap? '<a class="btn btn-sm" href="'+esc(zap)+'" target="_blank" rel="noopener">'+
+            ico("balao",14)+"Abrir no WhatsApp</a>" : "")+
+      (l.telefone? copiaBtn(l.telefone,"Copiar telefone") : "")+
+      (l.email? copiaBtn(l.email,"Copiar e-mail") : "")+
+      '<button class="btn btn-sm" data-action="editar-lead" data-id="'+esc(l.id)+'">'+
+        ico("config",14)+"Editar</button>"+
+    "</div>"+
+  "</div>";
+}
+
 function renderAtendimento(){
   var l = activeLead();
   var h = '<div class="topline"><div><div class="eyebrow">Atendimento ao vivo</div>'+
@@ -3568,7 +3658,9 @@ function renderAtendimento(){
       '<div class="row-between" style="margin-bottom:10px;flex-wrap:wrap;gap:10px;">'+
       '<div><div style="font-family:var(--font-display);font-weight:700;font-size:17px;">'+esc(l.nome)+"</div>"+
       '<div class="faint">'+esc([l.cidade,l.estado].filter(Boolean).join(" - ")||"Cidade não informada")+
-      (l.qualificacao? " · "+esc(l.qualificacao):"")+"</div></div>"+
+      (l.qualificacao? " · "+esc(l.qualificacao):"")+
+      (podeVerEquipe() && l.donoNome? " · "+esc(l.donoNome) : "")+
+      (!l.donoId? ' · <span class="pill pill-gold">na fila</span>' : "")+"</div></div>"+
       '<div class="row"><select class="status-select" data-action="mudar-status" data-id="'+l.id+'">'+
       STATUS_LIST().map(function(s){ return '<option value="'+esc(s.key)+'"'+(s.key===l.status?" selected":"")+">"+esc(s.key)+"</option>"; }).join("")+"</select>"+
       '<button class="btn btn-ghost btn-sm" data-action="editar-lead" data-id="'+l.id+'">Editar</button>'+
@@ -3576,6 +3668,8 @@ function renderAtendimento(){
       '<div class="progress-track"><div class="progress-fill" id="progressFill" style="width:'+pct+'%;"></div></div>'+
       '<div class="row-between" style="margin-top:6px;"><span class="faint" id="progressLabel">'+totalEtapas(l)+' de 12 etapas</span>'+
       '<span class="faint">Nota: <b class="mono">'+(l.nota!==""?l.nota:"—")+"</b>/10</span></div></div>";
+
+    h += fichaCandidato(l);
 
     h += ETAPAS.map(function(m){
       var done=etapaFeita(l,m.n), open=!!ui.openEtapas[m.n], atual=(m.n===prox);
@@ -4350,6 +4444,85 @@ function admPipeline(){
       '<div class="row" style="margin-top:12px;">'+
       '<button class="btn btn-primary" data-action="pipe-salvar-depara">'+ico("ok",14)+"Salvar de-para</button></div>";
   }
+
+  /* ---- de-para de vendedores ---- */
+  h += '<hr class="sep"><div class="section-head"><h2>'+ico("usuario",17)+
+       "Vendedores do Controlead</h2></div>";
+  var naFila = (state.leads||[]).filter(function(l){ return ehLeadDoCrm(l) && !l.donoId; });
+  h += callout("accent","usuario",
+    "No Controlead o proprietário do lead é um <b>usuário do sistema</b>, não um nome escrito. "+
+    "Aqui você liga cada pessoa de lá a uma conta da Bússola — e a partir daí o lead cai direto "+
+    "na mão do vendedor, em vez de na fila."+
+    (naFila.length? " Hoje há <b>"+naFila.length+"</b> lead(s) esperando na fila." : ""));
+
+  // A lista de gente vem de três lugares: quem o CRM devolveu na última
+  // puxada, quem já está escrito no de-para, e quem aparece como dono nos
+  // leads que ficaram na fila. O terceiro é o que salva quando falta o
+  // escopo de usuários no token.
+  var vistos = [];
+  (ui.vendedoresCrm || []).forEach(function(v){
+    var ch = v.id || v.email || v.nome;
+    if(ch && !vistos.some(function(x){ return x.chave === ch; }))
+      vistos.push({chave: ch, nome: v.nome || v.email || v.id, email: v.email || ""});
+  });
+  Object.keys((p.vendedores)||{}).forEach(function(ch){
+    if(!vistos.some(function(x){ return x.chave === ch; })) vistos.push({chave: ch, nome: ch, email: ""});
+  });
+  naFila.forEach(function(l){
+    var ch = l.responsavelId || l.responsavelEmail || l.responsavel;
+    if(ch && !vistos.some(function(x){ return x.chave === ch; }))
+      vistos.push({chave: ch, nome: l.responsavel || ch, email: l.responsavelEmail || ""});
+  });
+
+  if(!vistos.length){
+    h += '<div class="empty" style="margin-top:14px;">Ainda não vi nenhum vendedor do Controlead.<br>'+
+      '<span class="faint">Puxe os leads uma vez: quem aparecer como proprietário lá vem para cá.</span></div>';
+  } else {
+    var equipe = equipeDaBussola();
+    h += '<div style="overflow-x:auto;"><table class="tbl"><thead><tr>'+
+      "<th>No Controlead</th><th>É quem, aqui</th><th>Leads na fila</th>"+
+      "</tr></thead><tbody>"+
+      vistos.map(function(v){
+        var escolhido = ((p.vendedores)||{})[v.chave] || "";
+        var casouSozinho = "";
+        if(!escolhido){
+          var achou = donoDoLead({responsavelId:v.chave, responsavel:v.nome, responsavelEmail:v.email});
+          if(achou){ escolhido = achou.id; casouSozinho = ' <span class="pill pill-info">casou sozinho</span>'; }
+        }
+        var quantos = naFila.filter(function(l){
+          return (l.responsavelId||l.responsavelEmail||l.responsavel) === v.chave;
+        }).length;
+        return "<tr><td>"+esc(v.nome)+casouSozinho+
+          (v.email? '<br><span class="faint">'+esc(v.email)+"</span>" : "")+"</td>"+
+          '<td><select class="inp-sm" data-vend="'+esc(v.chave)+'">'+
+            '<option value="">— deixar na fila —</option>'+
+            equipe.map(function(u){
+              return '<option value="'+esc(u.id)+'"'+(u.id===escolhido?" selected":"")+">"+
+                     esc(u.nome)+(u.email? " ("+esc(u.email)+")" : "")+"</option>";
+            }).join("")+"</select></td>"+
+          '<td class="num">'+quantos+"</td></tr>";
+      }).join("")+"</tbody></table></div>";
+    h += '<div class="row" style="margin-top:12px;">'+
+      '<button class="btn btn-primary" data-action="vend-salvar">'+ico("ok",14)+
+      "Salvar e distribuir a fila</button></div>";
+    h += '<p class="faint" style="margin-top:8px;font-size:12.5px;">'+
+      "Salvar distribui na hora os leads que estão na fila. Quem já está com um vendedor "+
+      "não muda de mão — tirar um lead de quem está atendendo seria resolver um problema criando outro.</p>";
+  }
+
+  /* ---- período da importação ---- */
+  h += '<hr class="sep"><div class="section-head"><h2>'+ico("relogio",17)+
+       "Período da importação</h2></div>";
+  h += callout("accent","relogio",
+    "Vazio traz tudo. Preencha para puxar só uma faixa — é o jeito de trazer o mês corrente "+
+    "sem arrastar a base inteira de uma vez. Vale pela <b>data de criação</b> do lead no Controlead.");
+  h += '<div class="form-grid">'+
+    '<label class="field">De<input type="date" data-periodo="de" value="'+esc(ui.crmDe||"")+'"></label>'+
+    '<label class="field">Até<input type="date" data-periodo="ate" value="'+esc(ui.crmAte||"")+'"></label>'+
+    "</div>"+
+    '<div class="row" style="margin-top:10px;">'+
+    '<button class="btn" data-action="periodo-mes">Mês atual</button>'+
+    '<button class="btn" data-action="periodo-limpar">Sem filtro</button></div>';
 
   /* ---- estado da integração ---- */
   h += '<hr class="sep"><div class="section-head"><h2>'+ico("chave",17)+"Ligação com o Controlead</h2></div>";
@@ -5465,6 +5638,35 @@ function handle(action, el){
       render(); toast("Todas as áreas voltaram a aparecer.");
       break;
     case "testar-controlead": diagnosticoControlead(); break;
+    case "vend-salvar": {
+      var pv = clonar(PIPELINE());
+      pv.vendedores = {};
+      document.querySelectorAll("[data-vend]").forEach(function(sel){
+        if(sel.value) pv.vendedores[sel.dataset.vend] = sel.value;
+      });
+      db.set("pipeline", pv);
+      // distribui a fila na hora — o de-para sem efeito imediato seria uma
+      // configuração que a pessoa salva e não vê acontecer nada
+      var mexidos = 0;
+      (state.leads||[]).forEach(function(l){
+        if(!ehLeadDoCrm(l) || l.donoId) return;
+        var dono = donoDoLead(l);
+        if(dono){ l.donoId = dono.id; l.donoNome = dono.nome; l.atualizadoEm = nowISO(); mexidos++; }
+      });
+      if(mexidos) saveStateNow();
+      render();
+      toast(mexidos? (mexidos + " lead(s) da fila foram para os donos.") : "De-para salvo.");
+      break;
+    }
+    case "periodo-mes": {
+      var hoje = new Date();
+      var pri = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      ui.crmDe = pri.toISOString().slice(0,10);
+      ui.crmAte = hoje.toISOString().slice(0,10);
+      render(); toast("Período: mês atual."); break;
+    }
+    case "periodo-limpar":
+      ui.crmDe = ""; ui.crmAte = ""; render(); toast("Sem filtro de data."); break;
     case "pipe-salvar-depara": {
       var pd = clonar(PIPELINE());
       pd.dePara = pd.dePara || {};
@@ -6371,6 +6573,11 @@ document.addEventListener("input", function(e){
   }
 });
 document.addEventListener("change", function(e){ if(e.target.closest("[data-calc]")) atualizarCalc(); });
+document.addEventListener("change", function(e){
+  var per = e.target.closest("[data-periodo]");
+  if(!per) return;
+  if(per.dataset.periodo === "de") ui.crmDe = per.value; else ui.crmAte = per.value;
+});
 
 document.getElementById("searchInput").addEventListener("input", function(){ ui.buscaSel=0; renderBusca(); });
 document.getElementById("searchInput").addEventListener("keydown", function(e){
@@ -7787,20 +7994,46 @@ function leadPorExterno(ext){
   return null;
 }
 
-// Acha na equipe quem o Controlead chamou de responsável. Compara por
-// e-mail primeiro, depois por nome — e desiste em silêncio: lead sem
-// dono cai na fila, que é melhor do que cair no dono errado.
-function donoPeloNome(quem){
-  if(!quem) return null;
-  var alvo = normalizar(quem);
-  var lista = (typeof nuvem !== "undefined" && nuvem.perfis && nuvem.perfis.length)
+function equipeDaBussola(){
+  return (typeof nuvem !== "undefined" && nuvem.perfis && nuvem.perfis.length)
     ? nuvem.perfis : (state.usuarios || []);
-  for(var i=0;i<lista.length;i++){
-    var u = lista[i];
-    if(u.email && normalizar(u.email) === alvo) return u;
+}
+function perfilPorId(id){
+  var lista = equipeDaBussola();
+  for(var i=0;i<lista.length;i++) if(lista[i].id === id) return lista[i];
+  return null;
+}
+
+// Acha na equipe quem o Controlead chamou de proprietário.
+//
+// Três tentativas, nesta ordem, e o motivo da ordem é que cada uma é mais
+// confiável que a seguinte:
+//   1. o de-para escrito à mão pelo administrador — decisão de gente;
+//   2. o e-mail, que é único;
+//   3. o nome, comparado sem acento e sem caixa.
+// Não casou nenhuma: o lead vai para a fila. Cair na fila é um problema
+// visível; cair no vendedor errado é um problema que ninguém percebe.
+function donoDoLead(cru){
+  var mapa = (PIPELINE().vendedores) || {};
+  var chaves = [cru.responsavelId, cru.responsavelEmail, cru.responsavel];
+  for(var k=0;k<chaves.length;k++){
+    var id = chaves[k] && mapa[chaves[k]];
+    if(id){ var p = perfilPorId(id); if(p) return p; }
   }
-  for(var j=0;j<lista.length;j++){
-    if(normalizar(lista[j].nome || "") === alvo) return lista[j];
+  var lista = equipeDaBussola();
+  var email = normalizar(cru.responsavelEmail || "");
+  if(email){
+    for(var i=0;i<lista.length;i++){
+      if(lista[i].email && normalizar(lista[i].email) === email) return lista[i];
+    }
+  }
+  var nome = normalizar(cru.responsavel || "");
+  if(nome){
+    for(var j=0;j<lista.length;j++){
+      var u = lista[j];
+      if(normalizar(u.nome || "") === nome) return u;
+      if(u.email && normalizar(u.email) === nome) return u;
+    }
   }
   return null;
 }
@@ -7811,11 +8044,23 @@ function donoPeloNome(quem){
 // telefone, cidade), a Bússola manda no trabalho (etapas, diagnóstico,
 // anotações, objeções). Reimportar não pode apagar o que o vendedor
 // escreveu — se apagasse, ninguém apertaria o botão duas vezes.
+var CAMPOS_DO_CRM = ["nome","telefone","email","cidade","estado","origem",
+                     "empresa","endereco","cep","funil","valor","situacao",
+                     "etiquetas","responsavel","responsavelEmail","responsavelId"];
+
 function fundirLead(existente, cru){
   var l = existente, mudou = false;
-  ["nome","telefone","email","cidade","estado","origem"].forEach(function(c){
+  CAMPOS_DO_CRM.forEach(function(c){
     if(cru[c] && l[c] !== cru[c]){ l[c] = cru[c]; mudou = true; }
   });
+  // O de-para de vendedores pode ter sido acertado depois da primeira
+  // importação. Reimportar leva o lead ao dono certo — mas só quem ainda
+  // está na fila: tirar um lead de quem já está trabalhando nele seria
+  // resolver um problema criando outro.
+  if(!l.donoId){
+    var novoDono = donoDoLead(cru);
+    if(novoDono){ l.donoId = novoDono.id; l.donoNome = novoDono.nome; mudou = true; }
+  }
   if(cru.obs && (l.notas||"").indexOf(cru.obs) < 0){
     l.notas = (l.notas? l.notas + "\n" : "") + cru.obs;
     mudou = true;
@@ -7836,7 +8081,7 @@ function fundirLead(existente, cru){
 }
 
 function importarDoControlead(lista){
-  var r = {novos:0, atualizados:0, iguais:0, semEtapa:[], fila:0};
+  var r = {novos:0, atualizados:0, iguais:0, semEtapa:[], fila:0, semDono:[], redistribuidos:0};
   (lista || []).forEach(function(cru){
     if(!cru || !cru.externoId) return;
     var col = colunaDoControlead(cru.etapa);
@@ -7857,12 +8102,18 @@ function importarDoControlead(lista){
     l.origem = cru.origem || "Controlead";
     l.notas = cru.obs || "";
     l.status = col;
+    CAMPOS_DO_CRM.forEach(function(c){ if(cru[c]) l[c] = cru[c]; });
     if(cru.criadoEm) l.criadoEm = cru.criadoEm;
     // O responsável do CRM vira o dono aqui, quando dá para reconhecer.
     // Quando não dá, o lead fica sem dono: é a fila que a equipe pega.
-    var dono = donoPeloNome(cru.responsavel);
+    var dono = donoDoLead(cru);
     if(dono){ l.donoId = dono.id; l.donoNome = dono.nome; }
-    else { l.donoId = null; l.donoNome = ""; r.fila++; }
+    else {
+      l.donoId = null; l.donoNome = ""; r.fila++;
+      // guarda quem o CRM disse ser o dono, mesmo sem casar: é isso que
+      // enche a lista do de-para com nomes de verdade
+      if(cru.responsavel && r.semDono.indexOf(cru.responsavel) < 0) r.semDono.push(cru.responsavel);
+    }
     state.leads.push(l);
     r.novos++;
   });
@@ -7877,7 +8128,10 @@ function puxarControlead(){
     return;
   }
   toast("Falando com o Controlead…");
-  nuvem.sb.functions.invoke("controlead", {body: {paginas: 5}}).then(function(r){
+  var periodo = {paginas: 5};
+  if(ui.crmDe) periodo.desde = ui.crmDe;
+  if(ui.crmAte) periodo.ate = ui.crmAte;
+  nuvem.sb.functions.invoke("controlead", {body: periodo}).then(function(r){
     if(r.error) return lerErroFuncao(r.error).then(function(i){ throw i; });
     if(r.data && r.data.erro) throw {tipo: r.data.erro, dica: r.data.detalhe,
                                      chaves: r.data.chaves, status: r.data.status};
@@ -7885,14 +8139,21 @@ function puxarControlead(){
     // As etapas que o Controlead usou de verdade viram sugestão de
     // configuração — é mais confiável que qualquer lista que eu chutasse.
     if(r.data && r.data.etapas && r.data.etapas.length) ui.etapasCrm = r.data.etapas;
+    if(r.data && r.data.vendedores && r.data.vendedores.length) ui.vendedoresCrm = r.data.vendedores;
     render();
     var frases = [];
     if(res.novos) frases.push(res.novos + (res.novos===1? " novo" : " novos"));
     if(res.atualizados) frases.push(res.atualizados + " atualizado" + (res.atualizados===1?"":"s"));
     if(res.iguais) frases.push(res.iguais + " sem mudança");
+    var fora = (r.data||{}).foraDoPeriodo || 0;
+    if(fora) frases.push(fora + " fora do período");
     toast(frases.length? ("Controlead: " + frases.join(", ") + ".") : "Controlead: nada novo.");
     if(res.fila)
-      setTimeout(function(){ toast(res.fila + " lead(s) sem responsável no CRM foram para a fila."); }, 2600);
+      setTimeout(function(){
+        toast(res.fila + " lead(s) foram para a fila" +
+          (res.semDono.length? " — o Controlead diz que são de: " + res.semDono.slice(0,3).join(", ") +
+            ". Ligue essas pessoas às contas em Administração → Pipeline." : "."));
+      }, 2600);
     if(res.semEtapa.length)
       setTimeout(function(){
         toast('Etapas que não bateram com nenhuma coluna: ' + res.semEtapa.slice(0,3).join(", ") +
