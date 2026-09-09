@@ -1045,6 +1045,7 @@
             background:var(--paper-sunken);color:var(--ink-faint);}
   .pipe-tag-crm{background:var(--accent-soft);color:var(--accent-strong);}
   .pipe-tag-fila{background:var(--gold-soft);color:var(--gold);font-weight:650;}
+  .pipe-tag-roteiro{background:var(--success-soft);color:var(--success);font-weight:650;}
   .pipe-mover{font-size:11px;padding:3px 5px;border-radius:8px;width:100%;
               background:var(--paper-sunken);color:var(--ink-faint);
               border:1px solid var(--border-soft);font-family:inherit;}
@@ -1838,6 +1839,55 @@ function contarLeadsGuardados(papel){
     return ehLeadDoCrm(l) && !leadTrabalhado(l);
   }).length;
 }
+
+/* -------------------------------------------------------------------------
+   O ROTEIRO — quem senta na mesa do Atendimento ao vivo
+
+   A carteira inteira mora na Pipeline. O Atendimento ao vivo é a mesa de
+   trabalho, e mesa com 544 fichas em cima não é mesa: é pilha. Entram aqui
+   três, e só três:
+
+     · o candidato criado à mão nesta tela — foi feito para ser atendido;
+     · o que alguém escolheu atender na Pipeline (clicar no card é escolher);
+     · o que já tem atendimento em andamento — etapa marcada, card movido à
+       mão, anotação escrita.
+
+   O terceiro caso existe para o mesmo motivo de sempre: tirar da mesa uma
+   conversa já começada seria pior do que a lista comprida que isto veio
+   resolver. Nada aqui apaga lead nenhum — o que sai da mesa continua
+   inteiro na Pipeline.
+   ------------------------------------------------------------------------- */
+function noRoteiro(l){
+  if(!l) return false;
+  if(!ehLeadDoCrm(l)) return true;
+  if(l.noRoteiro) return true;
+  if(leadTrabalhado(l)) return true;
+  return state.activeLeadId === l.id;   // o que está aberto agora não some
+}
+function leadsDoRoteiro(){ return meusLeads().filter(noRoteiro); }
+
+// Escolher na Pipeline é abrir o roteiro. A marca não se desfaz sozinha:
+// o vendedor volta amanhã e o candidato ainda está na mesa.
+function porNoRoteiro(id){
+  var l = findLead(id);
+  if(!l || !ehLeadDoCrm(l) || l.noRoteiro) return false;
+  l.noRoteiro = true;
+  l.roteiroEm = nowISO();
+  return true;
+}
+// Tirar da mesa não é excluir. O lead volta a ser um card da Pipeline.
+function tirarDoRoteiro(id){
+  var l = findLead(id);
+  if(!l) return false;
+  l.noRoteiro = false;
+  delete l.roteiroEm;
+  if(state.activeLeadId === id) state.activeLeadId = null;
+  return true;
+}
+// Só oferece o botão quando ele funciona de verdade: um lead com
+// atendimento em andamento não sai da mesa, e um botão que não faz o que
+// diz é pior do que botão nenhum.
+function podeSairDoRoteiro(l){ return !!l && ehLeadDoCrm(l) && !leadTrabalhado(l); }
 
 function findLead(id){ for(var i=0;i<state.leads.length;i++) if(state.leads[i].id===id) return state.leads[i]; return null; }
 
@@ -3546,6 +3596,9 @@ function cardPipeline(l, colunas){
   var tags = "";
   if(naFila(l)) tags += '<span class="pipe-tag pipe-tag-fila">na fila</span>';
   if(l.externoId) tags += '<span class="pipe-tag pipe-tag-crm">Controlead</span>';
+  // Quem já está na mesa do Atendimento ao vivo diz isso aqui, para o
+  // vendedor não abrir duas vezes o mesmo candidato achando que esqueceu.
+  if(ehLeadDoCrm(l) && noRoteiro(l)) tags += '<span class="pipe-tag pipe-tag-roteiro">no roteiro</span>';
   if(l.origem && !l.externoId) tags += '<span class="pipe-tag">'+esc(l.origem)+"</span>";
   if(podeVerEquipe() && l.donoNome && !naFila(l))
     tags += '<span class="pipe-tag">'+esc(l.donoNome.split(" ")[0])+"</span>";
@@ -3774,22 +3827,43 @@ function renderAtendimento(){
   var l = activeLead();
   var h = '<div class="topline"><div><div class="eyebrow">Atendimento ao vivo</div>'+
     '<h1 class="page-title">Roteiro do atendimento</h1>'+
-    '<p class="page-sub">Doze etapas, na ordem. Preencha enquanto conversa — tudo fica salvo no candidato.</p></div>'+
+    '<p class="page-sub">Doze etapas, na ordem. Preencha enquanto conversa — tudo fica salvo no candidato. '+
+    'Ao lado ficam só os que você criou aqui e os que escolheu atender na Pipeline.</p></div>'+
     '<div class="row"><button class="btn" data-action="abrir-busca">'+ico("lupa",15)+'Buscar</button>'+
     '<button class="btn btn-primary" data-action="novo-lead">'+ico("usuario",15)+'Novo atendimento</button></div></div>';
 
+  // A mesa: só quem está no roteiro. O resto da carteira continua inteiro
+  // na Pipeline — e o rodapé da lista diz quantos são, para ninguém achar
+  // que sumiram.
+  var naMesa = leadsDoRoteiro();
+  var guardados = meusLeads().length - naMesa.length;
+  var temPipe = podeVerTela("pipeline");
+
   h += '<div class="split"><div>'+
-    '<div class="row-between" style="margin-bottom:10px;"><h2 style="font-size:14px;margin:0;">Candidatos</h2><span class="faint">'+meusLeads().length+"</span></div>";
-  if(!meusLeads().length){
-    h += '<div class="empty">Nenhum atendimento ainda.<br><button class="btn btn-primary" data-action="novo-lead">Criar o primeiro</button></div>';
+    '<div class="row-between" style="margin-bottom:10px;"><h2 style="font-size:14px;margin:0;">No roteiro</h2>'+
+    '<span class="faint">'+naMesa.length+"</span></div>";
+  if(!naMesa.length){
+    h += guardados
+      ? '<div class="empty">Nenhum candidato na mesa agora.<br>'+
+        '<span class="faint">'+guardados+(guardados===1? " candidato está" : " candidatos estão")+
+        ' na Pipeline'+(temPipe? " — abra o card de quem você vai atender." : ".")+"</span>"+
+        (temPipe? '<br><button class="btn btn-sm" data-action="ir" data-view="pipeline">Ir para a Pipeline</button>' : "")+
+        '<br><button class="btn btn-primary" data-action="novo-lead" style="margin-top:8px;">Novo atendimento</button></div>'
+      : '<div class="empty">Nenhum atendimento ainda.<br><button class="btn btn-primary" data-action="novo-lead">Criar o primeiro</button></div>';
   } else {
-    meusLeads().slice().sort(function(a,b){ return (b.atualizadoEm||"").localeCompare(a.atualizadoEm||""); }).forEach(function(x){
+    naMesa.slice().sort(function(a,b){ return (b.atualizadoEm||"").localeCompare(a.atualizadoEm||""); }).forEach(function(x){
       var ini=(x.nome||"?").trim().split(/\s+/).map(function(p){return p[0];}).slice(0,2).join("").toUpperCase();
       h += '<div class="lead-item'+(l&&x.id===l.id?" active":"")+'" data-action="abrir-lead" data-id="'+x.id+'">'+
         '<div class="lead-avatar">'+esc(ini)+"</div>"+
         '<div class="lead-main"><div class="lead-name">'+esc(x.nome)+"</div>"+
         '<div class="lead-meta">'+esc(x.status)+" · "+totalEtapas(x)+"/12 etapas</div></div></div>";
     });
+    if(guardados){
+      h += '<div class="faint" style="font-size:12px;margin-top:10px;line-height:1.5;">'+
+        guardados+(guardados===1? " outro candidato está" : " outros candidatos estão")+" na Pipeline."+
+        (temPipe? ' <button class="btn btn-sm btn-ghost" data-action="ir" data-view="pipeline">Ver a Pipeline</button>' : "")+
+        "</div>";
+    }
   }
   h += "</div><div>";
 
@@ -3807,6 +3881,10 @@ function renderAtendimento(){
       '<div class="row"><select class="status-select" data-action="mudar-status" data-id="'+l.id+'">'+
       STATUS_LIST().map(function(s){ return '<option value="'+esc(s.key)+'"'+(s.key===l.status?" selected":"")+">"+esc(s.key)+"</option>"; }).join("")+"</select>"+
       '<button class="btn btn-ghost btn-sm" data-action="editar-lead" data-id="'+l.id+'">Editar</button>'+
+      // Sair da mesa não é excluir: o card continua na Pipeline, inteiro.
+      (podeSairDoRoteiro(l)
+        ? '<button class="btn btn-ghost btn-sm" data-action="tirar-roteiro" data-id="'+l.id+'" '+
+          'title="Volta para a Pipeline sem apagar nada">Tirar do roteiro</button>' : "")+
       '<button class="btn btn-ghost btn-sm btn-danger" data-action="excluir-lead" data-id="'+l.id+'">Excluir</button></div></div>'+
       '<div class="progress-track"><div class="progress-fill" id="progressFill" style="width:'+pct+'%;"></div></div>'+
       '<div class="row-between" style="margin-top:6px;"><span class="faint" id="progressLabel">'+totalEtapas(l)+' de 12 etapas</span>'+
@@ -5549,11 +5627,22 @@ function handle(action, el){
       render(); break;
     case "puxar-controlead": puxarControlead(); break;
     case "abrir-lead": {
+      // Abrir o roteiro de um card da Pipeline é escolher atender: é isto
+      // que põe o candidato na mesa do Atendimento ao vivo.
+      porNoRoteiro(el.dataset.id);
       state.activeLeadId = el.dataset.id;
       ui.view = "atendimento"; ui.openEtapas = {}; ui.calc.roy = null;
       var al = findLead(el.dataset.id), pe = al? proximaEtapaPendente(al) : null;
       if(pe) ui.openEtapas[pe] = true;
       saveStateNow(); render(); break;
+    }
+    case "tirar-roteiro": {
+      var tl = findLead(el.dataset.id);
+      if(tl && tirarDoRoteiro(el.dataset.id)){
+        saveStateNow(); render();
+        toast(tl.nome + " saiu do roteiro. Continua na Pipeline.");
+      }
+      break;
     }
     case "excluir-lead":
       if(window.confirm("Excluir este atendimento? Não dá para desfazer.")){
