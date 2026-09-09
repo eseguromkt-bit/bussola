@@ -4113,12 +4113,18 @@ function camposParceiro(){
   ];
 }
 
+var CAMPO_ID_CRM_DICA =
+  "O identificador desta pessoa dentro do Controlead — algo como " +
+  "UugtGdN4jk3HToUKAc0V. É o casamento mais confiável que existe: não " +
+  "depende de o nome nem o e-mail serem iguais nos dois sistemas.";
+
 var CAMPOS_USUARIO = [
   {id:"nome", rot:"Nome completo"},
   {id:"usuario", rot:"Nome de usuário", dica:"sem espaços"},
   {id:"papel", rot:"Perfil", tipo:"select", opcoes:opcoesPapel(), dica:"Editor mexe no conteúdo, não em usuários"},
   {id:"ativo", rot:"Situação", tipo:"select", opcoes:[{v:"1",l:"Ativo"},{v:"0",l:"Desativado"}]},
-  {id:"senha", rot:"Senha", largo:true, dica:"ao editar, deixe vazio para manter a senha atual"}
+  {id:"senha", rot:"Senha", largo:true, dica:"ao editar, deixe vazio para manter a senha atual"},
+  {id:"idCrm", rot:"ID no Controlead", largo:true, dica:CAMPO_ID_CRM_DICA}
 ];
 
 // Na nuvem, login e senha são da conta da pessoa — o admin cuida do resto.
@@ -4126,7 +4132,8 @@ var CAMPOS_USUARIO_NUVEM = [
   {id:"nome", rot:"Nome completo", largo:true},
   {id:"papel", rot:"Perfil", tipo:"select", opcoes:opcoesPapel(), dica:"Editor mexe no conteúdo, não em usuários"},
   {id:"ativo", rot:"Situação", tipo:"select", opcoes:[{v:"1",l:"Ativo"},{v:"0",l:"Desativado"}],
-   dica:"desativado não consegue entrar"}
+   dica:"desativado não consegue entrar"},
+  {id:"idCrm", rot:"ID no Controlead", largo:true, dica:CAMPO_ID_CRM_DICA}
 ];
 
 /* =========================================================================
@@ -4738,6 +4745,19 @@ function admUsuarios(){
         "<br><br><b>Os três níveis:</b> <b>Vendedor</b> usa a base e cuida dos atendimentos dele. <b>Editor</b> edita todo o conteúdo — ramos, comissões, parceiros, rede, indicadores, scripts — e acompanha a equipe, mas não mexe em usuários. <b>Administrador</b> faz tudo isso e controla quem tem acesso."+
         "<br><br>Mudar o nível de alguém só vale de verdade depois que o <b>papeis-editor.sql</b> tiver rodado no banco: é lá que a regra é cumprida.")
     : callout("warn","aviso","Os usuários existem <b>neste navegador</b>. Para o consultor entrar no computador dele, clique em <b>Convite</b> e envie o arquivo gerado — ele importa na tela de acesso e passa a ter o login, o perfil e o conteúdo atualizado.");
+  var filaCrm = (state.leads||[]).filter(function(l){ return ehLeadDoCrm(l) && !l.donoId; }).length;
+  var semId = (state.usuarios||[]).filter(function(u){
+    return u.ativo && u.papel !== "admin" && !idCrmDoUsuario(u.id);
+  });
+  if(filaCrm && semId.length){
+    h += callout("warn","usuario",
+      "<b>"+filaCrm+"</b> lead(s) do Controlead estão na fila, e "+
+      (semId.length===1? "<b>"+esc(semId[0].nome)+"</b> ainda não tem"
+                       : "<b>"+semId.length+"</b> pessoas ainda não têm")+
+      " o ID do Controlead. Abra <b>Editar</b> e preencha o campo <b>ID no Controlead</b> — "+
+      "os leads da fila vão para o dono na hora em que você salvar.");
+  }
+
   h += '<div>'+(state.usuarios||[]).map(function(u){
     var p = PAPEIS[u.papel] || PAPEIS.vendedor;
     var acoes = nuv? "" : '<button class="btn btn-sm btn-gold" data-action="gerar-convite" data-id="'+u.id+'">Convite</button>';
@@ -4746,6 +4766,13 @@ function admUsuarios(){
     var sub = nuv
       ? (u.email? esc(u.email) : "conta na nuvem") + (u.criadoEm? " · desde "+fmtDate(u.criadoEm) : "")
       : "@"+esc(u.usuario)+" · criado em "+fmtDate(u.criadoEm);
+    // O ID do Controlead na linha, e não só no formulário: é o que diz de
+    // relance quem já está ligado ao CRM e quem ainda vai receber lead
+    // nenhum por importação.
+    var idCrmU = idCrmDoUsuario(u.id);
+    sub += idCrmU
+      ? ' · <span class="mono faint">Controlead: '+esc(idCrmU)+"</span>"
+      : (u.papel === "admin" ? "" : ' · <span class="faint">sem ID do Controlead</span>');
     return linhaItem(esc(u.nome)+' <span class="pill '+p.pill+'" style="margin-left:6px;">'+esc(p.nome)+"</span>"+
       (u.ativo? "" : ' <span class="pill pill-danger">inativo</span>')+
       (eu&&eu.id===u.id? ' <span class="faint">(você)</span>':""),
@@ -5794,13 +5821,7 @@ function handle(action, el){
       db.set("pipeline", pv);
       // distribui a fila na hora — o de-para sem efeito imediato seria uma
       // configuração que a pessoa salva e não vê acontecer nada
-      var mexidos = 0;
-      (state.leads||[]).forEach(function(l){
-        if(!ehLeadDoCrm(l) || l.donoId) return;
-        var dono = donoDoLead(l);
-        if(dono){ l.donoId = dono.id; l.donoNome = dono.nome; l.atualizadoEm = nowISO(); mexidos++; }
-      });
-      if(mexidos) saveStateNow();
+      var mexidos = distribuirFila();
       render();
       toast(mexidos? (mexidos + " lead(s) da fila foram para os donos.") : "De-para salvo.");
       break;
@@ -6257,14 +6278,16 @@ function handle(action, el){
     case "editar-usuario": {
       var uAlvo = porId(state.usuarios, el.dataset.id);
       if(!uAlvo) break;
+      var idCrmAtual = idCrmDoUsuario(uAlvo.id);
       if(naNuvem()){
         abrirForm("Editar consultor", CAMPOS_USUARIO_NUVEM,
-          {nome:uAlvo.nome, papel:uAlvo.papel, ativo:uAlvo.ativo?"1":"0"},
+          {nome:uAlvo.nome, papel:uAlvo.papel, ativo:uAlvo.ativo?"1":"0", idCrm:idCrmAtual},
           "salvar-usuario", 'data-id="'+uAlvo.id+'"');
         break;
       }
       abrirForm("Editar usuário", CAMPOS_USUARIO,
-        {nome:uAlvo.nome, usuario:uAlvo.usuario, papel:uAlvo.papel, ativo:uAlvo.ativo?"1":"0", senha:""},
+        {nome:uAlvo.nome, usuario:uAlvo.usuario, papel:uAlvo.papel, ativo:uAlvo.ativo?"1":"0",
+         senha:"", idCrm:idCrmAtual},
         "salvar-usuario", 'data-id="'+uAlvo.id+'"');
       break;
     }
@@ -6281,12 +6304,21 @@ function handle(action, el){
         }).length;
         if(!outrosAdm && (papelN!=="admin" || !ativoN))
           return toast("Precisa existir ao menos um administrador ativo.");
+        // O ID do Controlead é da integração, não do perfil: mora na
+        // configuração da pipeline, que administrador e editor já escrevem.
+        // Assim não precisa de coluna nova no banco nem de migração.
+        var idNovo = definirIdCrm(uid_, fmVal("idCrm"));
+        var distribuidos = distribuirFila();
         el.disabled = true;
         nuvem.salvarPerfil(uid_, {nome:nomeN, papel:papelN, ativo:ativoN}).then(function(r){
           if(r.error) throw r.error;
           return nuvem.carregarPerfis(nuvem.perfil.id);
         }).then(function(){
-          closeModal(); render(); toast("Consultor atualizado.");
+          closeModal(); render();
+          toast(distribuidos
+            ? ("Consultor atualizado. " + distribuidos + " lead(s) da fila foram para ele.")
+            : (idNovo? "Consultor atualizado, com o ID do Controlead."
+                     : "Consultor atualizado."));
         }).catch(function(err){
           el.disabled = false;
           toast("Não consegui salvar: "+((err&&err.message)||"erro"));
@@ -6308,10 +6340,15 @@ function handle(action, el){
         }
       } else {
         if(senhaU.length<6) return toast("A senha precisa de 6 caracteres.");
-        state.usuarios.push({id:uid(), nome:nomeU, usuario:login, senha:hashSenha(login,senhaU),
-          papel:fmVal("papel")||"vendedor", ativo:fmVal("ativo")==="1", criadoEm:nowISO(), ultimoAcesso:null});
+        var novoU = {id:uid(), nome:nomeU, usuario:login, senha:hashSenha(login,senhaU),
+          papel:fmVal("papel")||"vendedor", ativo:fmVal("ativo")==="1", criadoEm:nowISO(), ultimoAcesso:null};
+        state.usuarios.push(novoU);
+        uid_ = novoU.id;
       }
-      saveStateNow(); closeModal(); render(); toast("Usuário salvo.");
+      definirIdCrm(uid_, fmVal("idCrm"));
+      var distLocal = distribuirFila();
+      saveStateNow(); closeModal(); render();
+      toast(distLocal? ("Usuário salvo. "+distLocal+" lead(s) da fila foram para ele.") : "Usuário salvo.");
       break;
     }
     case "excluir-usuario": {
@@ -8161,6 +8198,52 @@ function leadPorExterno(ext){
   for(var i=0;i<state.leads.length;i++)
     if(state.leads[i].externoId === ext) return state.leads[i];
   return null;
+}
+
+/* -------------------------------------------------------------------------
+   O ID DO VENDEDOR NO CONTROLEAD
+
+   O mesmo dado, visto dos dois lados: em Administração → Pipeline é
+   "este vendedor do CRM é quem aqui"; na ficha do usuário é "o ID desta
+   pessoa lá". Um mapa só, para as duas telas nunca discordarem.
+
+   O mapa é guardado por chave do CRM, e não por id da Bússola, porque é
+   assim que o lead chega: ele traz o id de lá e pergunta de quem é.
+   ------------------------------------------------------------------------- */
+function idCrmDoUsuario(userId){
+  if(!userId) return "";
+  var mapa = (PIPELINE().vendedores) || {};
+  var chaves = Object.keys(mapa);
+  for(var i=0;i<chaves.length;i++) if(mapa[chaves[i]] === userId) return chaves[i];
+  return "";
+}
+
+// Grava o id, tirando o antigo. Sem isso, trocar o id deixaria os dois
+// apontando para a mesma pessoa, e o lead do id velho continuaria caindo
+// nela sem ninguém entender por quê.
+function definirIdCrm(userId, idCrm){
+  var p = clonar(PIPELINE());
+  p.vendedores = p.vendedores || {};
+  Object.keys(p.vendedores).forEach(function(k){
+    if(p.vendedores[k] === userId) delete p.vendedores[k];
+  });
+  idCrm = String(idCrm || "").trim();
+  if(idCrm) p.vendedores[idCrm] = userId;
+  db.set("pipeline", p);
+  return idCrm;
+}
+
+// Distribui o que está na fila com o de-para de agora. Devolve quantos
+// mudaram de mão, para a tela poder dizer o que aconteceu.
+function distribuirFila(){
+  var mexidos = 0;
+  (state.leads||[]).forEach(function(l){
+    if(!ehLeadDoCrm(l) || l.donoId) return;
+    var dono = donoDoLead(l);
+    if(dono){ l.donoId = dono.id; l.donoNome = dono.nome; l.atualizadoEm = nowISO(); mexidos++; }
+  });
+  if(mexidos) saveStateNow();
+  return mexidos;
 }
 
 function equipeDaBussola(){
