@@ -290,13 +290,19 @@
   /* ============ Formulários ============ */
   /* vale para <label> e para os campos compostos, que são <div> */
   .field{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:700;color:var(--ink-soft);}
+  /* type=search estava de fora, e num tema escuro isso não é detalhe: o
+     campo vinha com o fundo branco do navegador. */
   .field input[type=text],.field input[type=tel],.field input[type=email],.field input[type=password],
-  .field input[type=number],.field input[type=date],.field select,.field textarea{
+  .field input[type=number],.field input[type=date],.field input[type=search],
+  .field select,.field textarea{
     font-family:var(--font-body);font-size:14px;font-weight:500;color:var(--ink);
     background:var(--paper-sunken);border:1px solid var(--border);border-radius:14px;
     padding:11px 14px;width:100%;transition:border-color .14s,box-shadow .14s;
   }
   .field textarea{resize:vertical;min-height:68px;}
+  .field input[type=search]::-webkit-search-cancel-button{
+    -webkit-appearance:none;appearance:none;
+  }
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);box-shadow:var(--ring);outline:none;}
   .field input::placeholder,.field textarea::placeholder{color:var(--ink-faint);}
   .field .hint{font-weight:500;color:var(--ink-faint);font-size:12px;}
@@ -933,6 +939,24 @@
   .sr-only{
     position:absolute;width:1px;height:1px;padding:0;margin:-1px;
     overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+
+  /* Barra de filtros: quebra em linhas no celular, com a busca ocupando a
+     largura toda e os campos menores dividindo o resto. */
+  .filtros{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+    margin-top:16px;padding:13px 15px;
+    background:var(--paper-sunken);border:1px solid var(--border-soft);
+    border-radius:var(--radius-md);
+  }
+  .filtros .field{margin:0;}
+  .filtro-busca{flex:1 1 230px;min-width:0;}
+  .filtro-campo{flex:0 1 150px;min-width:0;}
+  .filtro-chips{display:flex;gap:7px;flex-wrap:wrap;margin-left:auto;padding-bottom:2px;}
+  @media (max-width:640px){
+    .filtro-busca{flex-basis:100%;}
+    .filtro-campo{flex:1 1 128px;}
+    .filtro-chips{margin-left:0;width:100%;}
   }
 
   /* A ficha do candidato: pares rótulo/valor que quebram em uma coluna no
@@ -1730,7 +1754,9 @@ var ui = {view:"inicio", openEtapas:{}, openAcc:{}, scriptCat:"Primeira abordage
           // a equipe como o Controlead a conhece, para o de-para
           vendedoresCrm:[],
           // período da última importação
-          crmDe:"", crmAte:""};
+          crmDe:"", crmAte:"",
+          // filtros do quadro: lente sobre a carteira, nunca chave
+          pipeFiltro:{q:"", dono:"", de:"", ate:"", origem:"", atraso:false}};
 var saveTimer = null;
 
 function estadoPadrao(){
@@ -3404,10 +3430,110 @@ function etapaBody(n, l){
    funciona no celular e para quem usa teclado. Só arrastar seria uma
    pipeline que metade da equipe não consegue usar.
    ========================================================================= */
+/* -------------------------------------------------------------------------
+   FILTROS DO QUADRO
+
+   Uma coisa que os filtros NÃO fazem: ampliar o que a pessoa enxerga.
+   Eles trabalham sempre sobre meusLeads(), que já recortou a carteira pelo
+   nível de quem entrou — e o RLS do banco recorta de novo, do lado de lá.
+   Filtro é lente, não chave: escolher "dono: Fulano" num campo que o
+   vendedor nem vê não traria lead nenhum a mais.
+   ------------------------------------------------------------------------- */
+function filtroPipe(){
+  if(!ui.pipeFiltro) ui.pipeFiltro = {q:"", dono:"", de:"", ate:"", origem:"", atraso:false};
+  return ui.pipeFiltro;
+}
+function filtroLimpo(){
+  var f = filtroPipe();
+  return !f.q && !f.dono && !f.de && !f.ate && !f.origem && !f.atraso;
+}
+function estaAtrasado(l){
+  return !!(l.proximaData && !l.proximaFeita &&
+            l.proximaData < new Date().toISOString().slice(0,10));
+}
+// A data que interessa é a de entrada do candidato na casa.
+function diaDoLead(l){ return String(l.criadoEm || "").slice(0,10); }
+
+function aplicarFiltro(lista){
+  var f = filtroPipe();
+  var q = normalizar(f.q || "");
+  return lista.filter(function(l){
+    if(f.dono === "__fila"){ if(l.donoId) return false; }
+    else if(f.dono && l.donoId !== f.dono) return false;
+    if(f.origem && (l.origem || "") !== f.origem) return false;
+    if(f.atraso && !estaAtrasado(l)) return false;
+    var d = diaDoLead(l);
+    // Sem data de criação, o lead não é escondido por um filtro de data:
+    // some quem eu sei que está fora, não quem eu não sei onde está.
+    if(f.de && d && d < f.de) return false;
+    if(f.ate && d && d > f.ate) return false;
+    if(q){
+      var alvo = normalizar([l.nome, l.telefone, l.email, l.cidade, l.estado,
+                             l.empresa, l.origem, l.etiquetas].join(" "));
+      if(alvo.indexOf(q) < 0) return false;
+    }
+    return true;
+  });
+}
+
 function leadsDaPipeline(){
   return meusLeads().slice().sort(function(a,b){
     return (b.atualizadoEm||"").localeCompare(a.atualizadoEm||"");
   });
+}
+
+// A barra de filtros. O campo de dono só existe para quem enxerga a
+// equipe: para o vendedor ele teria uma opção só — ele mesmo.
+function barraFiltro(todos){
+  var f = filtroPipe();
+  var origens = [];
+  todos.forEach(function(l){ if(l.origem && origens.indexOf(l.origem) < 0) origens.push(l.origem); });
+  origens.sort();
+
+  var donos = [];
+  if(podeVerEquipe()){
+    todos.forEach(function(l){
+      if(l.donoId && !donos.some(function(d){ return d.id === l.donoId; }))
+        donos.push({id:l.donoId, nome:l.donoNome || "Sem nome"});
+    });
+    donos.sort(function(a,b){ return a.nome.localeCompare(b.nome); });
+  }
+  var naFila = todos.filter(function(l){ return !l.donoId; }).length;
+
+  var h = '<div class="filtros">'+
+    '<label class="field filtro-busca"><span class="sr-only">Buscar candidato</span>'+
+      '<input type="search" placeholder="Nome, telefone, cidade, e-mail…" '+
+      'value="'+esc(f.q)+'" data-filtro="q" autocomplete="off"></label>';
+
+  if(donos.length || naFila){
+    h += '<label class="field filtro-campo">Dono'+
+      '<select data-filtro="dono">'+
+        '<option value="">Todos</option>'+
+        (naFila? '<option value="__fila"'+(f.dono==="__fila"?" selected":"")+
+                 ">Na fila ("+naFila+")</option>" : "")+
+        donos.map(function(d){
+          return '<option value="'+esc(d.id)+'"'+(d.id===f.dono?" selected":"")+">"+esc(d.nome)+"</option>";
+        }).join("")+
+      "</select></label>";
+  }
+  if(origens.length > 1){
+    h += '<label class="field filtro-campo">Origem'+
+      '<select data-filtro="origem"><option value="">Todas</option>'+
+        origens.map(function(o){
+          return '<option value="'+esc(o)+'"'+(o===f.origem?" selected":"")+">"+esc(o)+"</option>";
+        }).join("")+
+      "</select></label>";
+  }
+  h += '<label class="field filtro-campo">De<input type="date" value="'+esc(f.de)+'" data-filtro="de"></label>'+
+       '<label class="field filtro-campo">Até<input type="date" value="'+esc(f.ate)+'" data-filtro="ate"></label>'+
+       '<div class="filtro-chips">'+
+         '<button class="tag-btn'+(f.atraso?" active":"")+'" data-action="filtro-atraso">'+
+           ico("relogio",13)+"Atrasados</button>"+
+         (filtroLimpo()? "" : '<button class="tag-btn" data-action="filtro-limpar">'+
+           ico("fechar",13)+"Limpar</button>")+
+       "</div>"+
+     "</div>";
+  return h;
 }
 // Lead sem dono é a fila que veio do Controlead: qualquer um pode pegar.
 function naFila(l){ return !l.donoId; }
@@ -3447,7 +3573,8 @@ function cardPipeline(l, colunas){
 
 function renderPipeline(){
   var colunas = STATUS_LIST();
-  var leads = leadsDaPipeline();
+  var todos = leadsDaPipeline();
+  var leads = aplicarFiltro(todos);
   var fila = leads.filter(naFila).length;
   var doCrm = leads.filter(function(l){ return !!l.externoId; }).length;
 
@@ -3468,10 +3595,22 @@ function renderPipeline(){
       '<button class="btn" data-action="novo-lead">'+ico("usuario",15)+"Novo</button>"+
     "</div></div>";
 
-  if(!leads.length){
+  if(!todos.length){
     h += '<div class="empty" style="margin-top:22px;">Nenhum candidato na pipeline ainda.<br>'+
       '<span class="faint">Crie um atendimento'+(podeEditar()? " ou puxe os leads do Controlead" : "")+
       '.</span></div>';
+    document.getElementById("appMain").innerHTML = h;
+    return;
+  }
+
+  h += barraFiltro(todos);
+
+  if(!leads.length){
+    // Lista vazia por causa do filtro é diferente de carteira vazia. Se as
+    // duas dessem a mesma tela, a pessoa acharia que perdeu os candidatos.
+    h += '<div class="empty" style="margin-top:18px;">Nenhum candidato com esses filtros.<br>'+
+      '<span class="faint">São '+todos.length+" no total. "+
+      '<button class="btn btn-sm" data-action="filtro-limpar">Limpar os filtros</button></span></div>';
     document.getElementById("appMain").innerHTML = h;
     return;
   }
@@ -3505,9 +3644,13 @@ function renderPipeline(){
         cardPipeline(l, colunas)+"</div>"; }).join("")+"</div>";
   }
 
-  var partes = [leads.length + (leads.length===1? " candidato" : " candidatos")];
+  var partes = [filtroLimpo()
+    ? leads.length + (leads.length===1? " candidato" : " candidatos")
+    : "mostrando " + leads.length + " de " + todos.length];
   if(fila) partes.push(fila + " na fila, sem dono");
   if(doCrm) partes.push(doCrm + " do Controlead");
+  var atrasados = leads.filter(estaAtrasado).length;
+  if(atrasados) partes.push(atrasados + " com retorno atrasado");
   h += '<p class="pipe-legenda">'+esc(partes.join(" · "))+".</p>";
 
   document.getElementById("appMain").innerHTML = h;
@@ -5373,6 +5516,10 @@ function handle(action, el){
       break;
     }
     case "mover-lead": moverLead(el.dataset.id, el.value); break;
+    case "filtro-atraso": filtroPipe().atraso = !filtroPipe().atraso; render(); break;
+    case "filtro-limpar":
+      ui.pipeFiltro = {q:"", dono:"", de:"", ate:"", origem:"", atraso:false};
+      render(); break;
     case "puxar-controlead": puxarControlead(); break;
     case "abrir-lead": {
       state.activeLeadId = el.dataset.id;
@@ -6573,6 +6720,28 @@ document.addEventListener("input", function(e){
   }
 });
 document.addEventListener("change", function(e){ if(e.target.closest("[data-calc]")) atualizarCalc(); });
+// Os selects e as datas redesenham na hora; a busca por texto não, senão
+// o campo perderia o foco a cada letra digitada.
+document.addEventListener("change", function(e){
+  var fl = e.target.closest("[data-filtro]");
+  if(fl){
+    filtroPipe()[fl.dataset.filtro] = fl.value;
+    if(fl.dataset.filtro !== "q") render();
+  }
+});
+document.addEventListener("input", function(e){
+  var fq = e.target.closest('[data-filtro="q"]');
+  if(!fq) return;
+  filtroPipe().q = fq.value;
+  clearTimeout(ui._tFiltro);
+  ui._tFiltro = setTimeout(function(){
+    var onde = fq.selectionStart;
+    render();
+    var novo = document.querySelector('[data-filtro="q"]');
+    if(novo){ novo.focus(); try{ novo.setSelectionRange(onde, onde); }catch(err){} }
+  }, 260);
+});
+
 document.addEventListener("change", function(e){
   var per = e.target.closest("[data-periodo]");
   if(!per) return;
